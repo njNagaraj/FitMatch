@@ -10,10 +10,14 @@ import { Profile } from './components/Profile';
 import { useFitMatchData } from './useFitMatchData';
 import { NotificationHandler } from './components/NotificationHandler';
 import { ICONS } from './constants';
+import { Login } from './components/Login';
+import { Signup } from './components/Signup';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState<Page>(Page.Home);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [authPage, setAuthPage] = useState<'login' | 'signup'>('login');
+  
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
       if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -35,6 +39,13 @@ const App = () => {
       localStorage.setItem('theme', 'light');
     }
   }, [theme]);
+  
+  // When user logs out, reset the view to the Home page for the next login
+  useEffect(() => {
+    if (!appData.isAuthenticated) {
+      setCurrentPage(Page.Home);
+    }
+  }, [appData.isAuthenticated])
 
   const toggleTheme = () => {
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
@@ -59,6 +70,18 @@ const App = () => {
     }
   };
 
+  if (!appData.isAuthenticated) {
+    return (
+        <div className="bg-light-bg dark:bg-dark-bg min-h-screen font-sans text-light-text dark:text-dark-text">
+            {authPage === 'login' ? (
+                <Login data={appData} setAuthPage={setAuthPage} />
+            ) : (
+                <Signup data={appData} setAuthPage={setAuthPage} />
+            )}
+        </div>
+    );
+  }
+
   return (
     <div className="flex bg-light-bg dark:bg-dark-bg min-h-screen font-sans text-light-text dark:text-dark-text relative">
       {isSidebarOpen && (
@@ -75,6 +98,7 @@ const App = () => {
         toggleTheme={toggleTheme}
         isSidebarOpen={isSidebarOpen}
         setSidebarOpen={setSidebarOpen}
+        logout={appData.logout}
       />
       <div className="flex-1 flex flex-col h-screen">
           <header className="lg:hidden flex items-center justify-between p-4 border-b border-light-border dark:border-dark-border bg-light-bg-secondary dark:bg-dark-bg-secondary flex-shrink-0">

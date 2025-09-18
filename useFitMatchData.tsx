@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Activity, User, Sport, Event, Chat, Message } from './types';
 import { MOCK_ACTIVITIES, MOCK_USERS, MOCK_SPORTS, MOCK_EVENTS, MOCK_CHATS } from './data';
-import { CURRENT_USER_ID, VIEW_RADIUS_KM } from './constants';
+import { VIEW_RADIUS_KM } from './constants';
 
 // Haversine formula to calculate distance between two lat/lon points in km
 const haversineDistance = (
@@ -30,8 +30,11 @@ export const useFitMatchData = () => {
   const [activities, setActivities] = useState<Activity[]>(MOCK_ACTIVITIES);
   const [events, setEvents] = useState<Event[]>(MOCK_EVENTS);
   const [chats, setChats] = useState<Chat[]>(MOCK_CHATS);
+  
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const currentUser = useMemo(() => users.find(u => u.id === CURRENT_USER_ID)!, [users]);
+  const currentUser = useMemo(() => users.find(u => u.id === currentUserId), [users, currentUserId]);
 
   const nearbyActivities = useMemo(() => {
     if (!currentUser) return [];
@@ -47,18 +50,18 @@ export const useFitMatchData = () => {
   }, [activities, currentUser]);
   
   const joinActivity = (activityId: string) => {
+    if (!currentUser) return;
     setActivities(prev => prev.map(activity => {
-      if (activity.id === activityId && !activity.participants.includes(CURRENT_USER_ID)) {
-        const newParticipants = [...activity.participants, CURRENT_USER_ID];
+      if (activity.id === activityId && !activity.participants.includes(currentUser.id)) {
+        const newParticipants = [...activity.participants, currentUser.id];
         
-        // Create a chat if one doesn't exist and there are now at least 2 people
         if (newParticipants.length >= 2 && !chats.some(c => c.activityId === activityId)) {
             const newChat: Chat = {
                 id: activityId,
                 activityId: activityId,
                 messages: [{
                     id: `msg-${Date.now()}`,
-                    senderId: CURRENT_USER_ID,
+                    senderId: currentUser.id,
                     text: `${currentUser.name} has joined the activity!`,
                     timestamp: new Date(),
                 }]
@@ -73,35 +76,36 @@ export const useFitMatchData = () => {
   };
 
   const leaveActivity = (activityId: string) => {
+      if (!currentUser) return;
       setActivities(prev => prev.map(activity => {
           if (activity.id === activityId) {
-              return { ...activity, participants: activity.participants.filter(pId => pId !== CURRENT_USER_ID) };
+              return { ...activity, participants: activity.participants.filter(pId => pId !== currentUser.id) };
           }
           return activity;
       }));
   };
   
   const createActivity = (newActivity: Omit<Activity, 'id' | 'creatorId' | 'participants'>) => {
+      if (!currentUser) return;
       const activity: Activity = {
           ...newActivity,
           id: `activity-${Date.now()}`,
-          creatorId: CURRENT_USER_ID,
-          participants: [CURRENT_USER_ID],
+          creatorId: currentUser.id,
+          participants: [currentUser.id],
       };
       setActivities(prev => [activity, ...prev]);
   };
   
   const deleteActivity = (activityId: string) => {
     setActivities(prev => prev.filter(activity => activity.id !== activityId));
-    // Also remove associated chat
     setChats(prev => prev.filter(chat => chat.activityId !== activityId));
   };
 
   const sendMessage = (activityId: string, text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim() || !currentUser) return;
     const newMessage: Message = {
       id: `msg-${Date.now()}`,
-      senderId: CURRENT_USER_ID,
+      senderId: currentUser.id,
       text,
       timestamp: new Date(),
     };
@@ -112,6 +116,36 @@ export const useFitMatchData = () => {
       }
       return chat;
     }));
+  };
+
+  const login = (email: string, password: string):boolean => {
+    // Mock login logic
+    if (email === 'user@fitmatch.com' && password === 'password123') {
+        const userToLogin = MOCK_USERS[0];
+        setCurrentUserId(userToLogin.id);
+        setIsAuthenticated(true);
+        return true;
+    }
+    return false;
+  };
+
+  const signup = (name: string, email: string, password: string):boolean => {
+    // Mock signup logic
+    const newUser: User = {
+        id: `user-${Date.now()}`,
+        name: name,
+        avatarUrl: `https://i.pravatar.cc/150?u=${name}`,
+        location: { lat: 12.9716, lon: 77.5946 } // Default to Bangalore
+    };
+    setUsers(prev => [...prev, newUser]);
+    setCurrentUserId(newUser.id);
+    setIsAuthenticated(true);
+    return true;
+  };
+  
+  const logout = () => {
+      setIsAuthenticated(false);
+      setCurrentUserId(null);
   };
 
   const getUserById = (id: string) => users.find(u => u.id === id);
@@ -125,6 +159,7 @@ export const useFitMatchData = () => {
     events,
     chats,
     currentUser,
+    isAuthenticated,
     nearbyActivities,
     myActivities,
     joinActivity,
@@ -135,6 +170,9 @@ export const useFitMatchData = () => {
     getUserById,
     getSportById,
     getActivityById,
+    login,
+    signup,
+    logout,
   };
 };
 

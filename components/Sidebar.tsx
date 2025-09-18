@@ -9,10 +9,11 @@ interface SidebarProps {
   toggleTheme: () => void;
   isSidebarOpen: boolean;
   setSidebarOpen: (isOpen: boolean) => void;
+  logout: () => void;
 }
 
 const NavItem: React.FC<{
-  label: Page;
+  label: string;
   icon: React.ReactNode;
   isActive: boolean;
   onClick: () => void;
@@ -31,7 +32,7 @@ const NavItem: React.FC<{
   </button>
 );
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, theme, toggleTheme, isSidebarOpen, setSidebarOpen }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, theme, toggleTheme, isSidebarOpen, setSidebarOpen, logout }) => {
   
   const handlePageChange = (page: Page) => {
     setCurrentPage(page);
@@ -70,7 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, t
         {navLinks.map(({ label, icon }) => (
           <NavItem
             key={label}
-            label={label}
+            label={label.toString()}
             icon={icon}
             isActive={currentPage === label}
             onClick={() => handlePageChange(label)}
@@ -87,6 +88,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, t
           <span className="mr-3">{theme === 'light' ? ICONS.moon : ICONS.sun}</span>
           {theme === 'light' ? 'Dark' : 'Light'} Mode
         </button>
+        <NavItem
+            label="Logout"
+            icon={ICONS.logout}
+            isActive={false}
+            onClick={logout}
+          />
       </div>
     </aside>
   );
