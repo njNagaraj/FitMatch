@@ -1,0 +1,58 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-ag">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FitMatch - Find Your Fitness Partner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              DEFAULT: '#00BFFF',
+              light: '#E0F7FF',
+              dark: '#009ACD',
+            },
+            dark: {
+              bg: '#1a202c',
+              'bg-secondary': '#2d3748',
+              text: '#e2e8f0',
+              'text-secondary': '#a0aec0',
+              border: '#4a5568',
+            },
+            light: {
+               bg: '#f7fafc',
+              'bg-secondary': '#ffffff',
+              text: '#2d3748',
+              'text-secondary': '#718096',
+              border: '#e2e8f0',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <link rel="preconnect" href="https://rsms.me/">
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
