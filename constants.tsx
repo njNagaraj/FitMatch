@@ -1,10 +1,11 @@
+
 import React from 'react';
 
 export const APP_NAME = "FitMatch";
 export const APP_TAGLINE = "Find Your Fitness Partner";
 export const CURRENT_USER_ID = 'user-1';
 export const TODAY = new Date('2025-09-18T12:00:00');
-export const VIEW_RADIUS_KM = 5;
+export const VIEW_RADIUS_KM = 15; // Increased radius to better include Chennai activities
 
 export const ICONS: { [key: string]: React.ReactNode } = {
   logo: <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6"><path d="M3.5 9.5c-0.28 0-0.5 0.22-0.5 0.5s0.22 0.5 0.5 0.5h1.09l3.38 6.75c0.1 0.2 0.32 0.31 0.53 0.22l2.36-1.05c0.19-0.08 0.38 0.03 0.44 0.23l1.19 3.56c0.08 0.24 0.36 0.36 0.6 0.27l2.5-0.89c0.23-0.08 0.37-0.33 0.29-0.56L14.4 12H20.5c0.28 0 0.5-0.22 0.5-0.5s-0.22-0.5-0.5-0.5H13.6l2.1-6.29c0.08-0.23-0.06-0.48-0.29-0.56l-2.5-0.89c-0.24-0.09-0.52 0.04-0.6 0.27l-1.19 3.56c-0.06 0.2-0.25 0.31-0.44 0.23l-2.36-1.05c-0.21-0.09-0.43 0.02-0.53 0.22L4.59 9.5H3.5z"></path></svg>,
@@ -26,4 +27,5 @@ export const ICONS: { [key: string]: React.ReactNode } = {
   menu: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>,
   close: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>,
   logout: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>,
+  adminDashboard: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.286zm0 13.036h.008v.008h-.008v-.008z" /></svg>,
 };

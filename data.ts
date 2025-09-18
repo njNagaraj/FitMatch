@@ -15,11 +15,15 @@ const addDays = (date: Date, d: number) => {
 };
 
 export const MOCK_USERS: User[] = [
-  { id: 'user-1', name: 'Nagaraj', avatarUrl: 'https://i.pravatar.cc/150?u=user-1', location: { lat: 12.9716, lon: 77.5946 } }, // Bangalore
-  { id: 'user-2', name: 'Alex', avatarUrl: 'https://i.pravatar.cc/150?u=user-2', location: { lat: 12.9730, lon: 77.5960 } },
-  { id: 'user-3', name: 'Maria', avatarUrl: 'https://i.pravatar.cc/150?u=user-3', location: { lat: 12.9700, lon: 77.5920 } },
-  { id: 'user-4', name: 'Sam', avatarUrl: 'https://i.pravatar.cc/150?u=user-4', location: { lat: 12.9780, lon: 77.6000 } },
-  { id: 'user-5', name: 'Chloe', avatarUrl: 'https://i.pravatar.cc/150?u=user-5', location: { lat: 13.0000, lon: 77.6100 } },
+  // Admin User
+  { id: 'admin-user', name: 'Admin', email: 'admin@fitmatch.com', avatarUrl: 'https://i.pravatar.cc/150?u=admin-user', location: { lat: 12.9716, lon: 77.5946 }, isAdmin: true },
+
+  // Regular Users
+  { id: 'user-1', name: 'Nagaraj', email: 'user@fitmatch.com', avatarUrl: 'https://i.pravatar.cc/150?u=user-1', location: { lat: 13.0471, lon: 80.1873 } }, // Chennai, Valasaravakam
+  { id: 'user-2', name: 'Priya', email: 'priya@test.com', avatarUrl: 'https://i.pravatar.cc/150?u=user-2', location: { lat: 13.0480, lon: 80.1890 } }, // Chennai, Valasaravakam
+  { id: 'user-3', name: 'Maria', email: 'maria@test.com', avatarUrl: 'https://i.pravatar.cc/150?u=user-3', location: { lat: 12.9700, lon: 77.5920 } }, // Bangalore
+  { id: 'user-4', name: 'Sam', email: 'sam@test.com', avatarUrl: 'https://i.pravatar.cc/150?u=user-4', location: { lat: 12.9780, lon: 77.6000 } },   // Bangalore
+  { id: 'user-5', name: 'Chloe', email: 'chloe@test.com', avatarUrl: 'https://i.pravatar.cc/150?u=user-5', location: { lat: 13.0000, lon: 77.6100 } }, // Bangalore
 ];
 
 export const MOCK_SPORTS: Sport[] = [
@@ -31,30 +35,33 @@ export const MOCK_SPORTS: Sport[] = [
 ];
 
 export const MOCK_ACTIVITIES: Activity[] = [
+    // Chennai Activities
     {
-        id: 'activity-1', sportId: 'sport-2', title: 'Morning Cycling Group', creatorId: 'user-2',
+        id: 'activity-6', sportId: 'sport-1', title: 'Marina Beach Run', creatorId: 'user-2',
+        dateTime: addHours(TODAY, 1), locationName: 'Marina Beach', locationCoords: { lat: 13.0535, lon: 80.2826 },
+        activityType: 'Easy Run', level: 'Beginner', partnersNeeded: 10, participants: ['user-2']
+    },
+    {
+        id: 'activity-7', sportId: 'sport-2', title: 'Guindy Park Cycling', creatorId: 'user-3', // A Bangalore user creating activity in Chennai
+        dateTime: addHours(TODAY, 6), locationName: 'Guindy National Park', locationCoords: { lat: 13.0076, lon: 80.2215 },
+        activityType: 'Mountain', level: 'Intermediate', partnersNeeded: 4, participants: ['user-3', 'user-2']
+    },
+
+    // Bangalore Activities
+    {
+        id: 'activity-1', sportId: 'sport-2', title: 'Morning Cycling Group', creatorId: 'user-3',
         dateTime: addHours(TODAY, -3), locationName: 'Cubbon Park', locationCoords: { lat: 12.9759, lon: 77.5921 },
-        activityType: 'Road', level: 'Beginner', partnersNeeded: 5, participants: ['user-2', 'user-3']
+        activityType: 'Road', level: 'Beginner', partnersNeeded: 5, participants: ['user-3']
     },
     {
-        id: 'activity-2', sportId: 'sport-1', title: 'Evening Long Run', creatorId: 'user-3',
+        id: 'activity-2', sportId: 'sport-1', title: 'Evening Long Run', creatorId: 'user-4',
         dateTime: addHours(TODAY, 5), locationName: 'Lalbagh Botanical Garden', locationCoords: { lat: 12.9507, lon: 77.5848 },
-        activityType: 'Long Run', level: 'Intermediate', partnersNeeded: 0, participants: ['user-3', 'user-1']
+        activityType: 'Long Run', level: 'Intermediate', partnersNeeded: 0, participants: ['user-4']
     },
     {
-        id: 'activity-3', sportId: 'sport-3', title: 'Swimming Lap Session', creatorId: 'user-4',
+        id: 'activity-3', sportId: 'sport-3', title: 'Swimming Lap Session', creatorId: 'user-5',
         dateTime: addHours(TODAY, 2.5), locationName: 'Basavanagudi Aquatic Centre', locationCoords: { lat: 12.9427, lon: 77.5746 },
-        activityType: 'Lap Swim', level: 'Advanced', partnersNeeded: 1, participants: ['user-4']
-    },
-    {
-        id: 'activity-4', sportId: 'sport-4', title: '5-a-side Football Match', creatorId: 'user-5',
-        dateTime: addHours(TODAY, 7), locationName: 'Tiento Sports', locationCoords: { lat: 12.9719, lon: 77.6387 },
-        activityType: '5-a-side', level: 'Casual', partnersNeeded: 8, participants: ['user-5', 'user-1', 'user-2']
-    },
-    {
-        id: 'activity-5', sportId: 'sport-1', title: 'Sunrise Threshold Run', creatorId: 'user-2',
-        dateTime: addDays(TODAY, 1), locationName: 'Kanteerava Stadium', locationCoords: { lat: 12.9691, lon: 77.5873 },
-        activityType: 'Threshold', level: 'Intermediate', partnersNeeded: 3, participants: ['user-2']
+        activityType: 'Lap Swim', level: 'Advanced', partnersNeeded: 1, participants: ['user-5']
     },
 ];
 
@@ -72,24 +79,18 @@ export const MOCK_EVENTS: Event[] = [
         registrationUrl: 'https://example.com/mumbaicyclo'
     },
     {
-        id: 'event-3', title: 'Delhi Soccer League Finals', sport: 'Football', city: 'Delhi', date: new Date('2025-09-28T18:00:00'),
-        description: 'Watch the thrilling conclusion to the Delhi Soccer League season.',
+        id: 'event-3', title: 'Chennai Soccer League Finals', sport: 'Football', city: 'Chennai', date: new Date('2025-09-28T18:00:00'),
+        description: 'Watch the thrilling conclusion to the Chennai Soccer League season.',
         imageUrl: 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?q=80&w=1923&auto=format&fit=crop',
-        registrationUrl: 'https://example.com/delhisoccer'
+        registrationUrl: 'https://example.com/chennaisoccer'
     },
 ];
 
 export const MOCK_CHATS: Chat[] = [
     {
-        id: 'activity-1', activityId: 'activity-1', messages: [
-            { id: 'msg-1-1', senderId: 'user-2', text: 'Hey, ready for the ride tomorrow?', timestamp: addHours(TODAY, -20) },
-            { id: 'msg-1-2', senderId: 'user-3', text: 'Yep! See you there.', timestamp: addHours(TODAY, -19) }
-        ]
-    },
-    {
-        id: 'activity-2', activityId: 'activity-2', messages: [
-            { id: 'msg-2-1', senderId: 'user-3', text: 'Long run today, excited!', timestamp: addHours(TODAY, 1) },
-            { id: 'msg-2-2', senderId: 'user-1', text: "Me too! I'll bring some hydration.", timestamp: addHours(TODAY, 1.5) }
+        id: 'activity-7', activityId: 'activity-7', messages: [
+            { id: 'msg-1-1', senderId: 'user-3', text: 'Hey, ready for the ride tomorrow in Guindy?', timestamp: addHours(TODAY, -20) },
+            { id: 'msg-1-2', senderId: 'user-2', text: 'Yep! See you there.', timestamp: addHours(TODAY, -19) }
         ]
     }
 ];

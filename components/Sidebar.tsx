@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Page } from '../types';
 import { ICONS, APP_NAME, APP_TAGLINE } from '../constants';
@@ -10,6 +11,7 @@ interface SidebarProps {
   isSidebarOpen: boolean;
   setSidebarOpen: (isOpen: boolean) => void;
   logout: () => void;
+  isAdmin: boolean;
 }
 
 const NavItem: React.FC<{
@@ -32,21 +34,24 @@ const NavItem: React.FC<{
   </button>
 );
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, theme, toggleTheme, isSidebarOpen, setSidebarOpen, logout }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, theme, toggleTheme, isSidebarOpen, setSidebarOpen, logout, isAdmin }) => {
   
   const handlePageChange = (page: Page) => {
     setCurrentPage(page);
     setSidebarOpen(false); // Close sidebar on navigation
   };
 
-  const navLinks: { label: Page; icon: React.ReactNode }[] = [
-    { label: Page.Home, icon: ICONS.home },
+  const baseNavLinks: { label: Page; icon: React.ReactNode }[] = [
     { label: Page.CreateActivity, icon: ICONS.create },
     { label: Page.MyActivities, icon: ICONS.myActivities },
     { label: Page.Events, icon: ICONS.events },
     { label: Page.Chats, icon: ICONS.chats },
     { label: Page.Profile, icon: ICONS.profile },
   ];
+
+  const navLinks = isAdmin
+    ? [{ label: Page.AdminDashboard, icon: ICONS.adminDashboard }, ...baseNavLinks]
+    : [{ label: Page.Home, icon: ICONS.home }, ...baseNavLinks];
 
   return (
     <aside className={`w-64 h-screen bg-light-bg-secondary dark:bg-dark-bg-secondary p-4 flex flex-col flex-shrink-0 border-r border-light-border dark:border-dark-border

@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 import { Activity, User, Sport, Event, Chat, Message } from './types';
 import { MOCK_ACTIVITIES, MOCK_USERS, MOCK_SPORTS, MOCK_EVENTS, MOCK_CHATS } from './data';
@@ -33,6 +34,7 @@ export const useFitMatchData = () => {
   
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const currentUser = useMemo(() => users.find(u => u.id === currentUserId), [users, currentUserId]);
 
@@ -101,6 +103,22 @@ export const useFitMatchData = () => {
     setChats(prev => prev.filter(chat => chat.activityId !== activityId));
   };
 
+  const deleteUser = (userId: string) => {
+    // 1. Remove activities created by the user
+    const activitiesToDelete = activities.filter(a => a.creatorId === userId).map(a => a.id);
+    setActivities(prev => prev.filter(a => a.creatorId !== userId));
+    setChats(prev => prev.filter(c => !activitiesToDelete.includes(c.activityId)));
+
+    // 2. Remove user from participants list of other activities
+    setActivities(prev => prev.map(activity => ({
+      ...activity,
+      participants: activity.participants.filter(pId => pId !== userId)
+    })));
+
+    // 3. Remove the user
+    setUsers(prev => prev.filter(u => u.id !== userId));
+  };
+
   const sendMessage = (activityId: string, text: string) => {
     if (!text.trim() || !currentUser) return;
     const newMessage: Message = {
@@ -119,33 +137,44 @@ export const useFitMatchData = () => {
   };
 
   const login = (email: string, password: string):boolean => {
-    // Mock login logic
-    if (email === 'user@fitmatch.com' && password === 'password123') {
-        const userToLogin = MOCK_USERS[0];
+    const userToLogin = MOCK_USERS.find(u => u.email === email);
+
+    if (email === 'admin@fitmatch.com' && password === 'admin123' && userToLogin?.isAdmin) {
         setCurrentUserId(userToLogin.id);
         setIsAuthenticated(true);
+        setIsAdmin(true);
+        return true;
+    }
+    
+    if (email === 'user@fitmatch.com' && password === 'password123' && userToLogin) {
+        setCurrentUserId(userToLogin.id);
+        setIsAuthenticated(true);
+        setIsAdmin(false);
         return true;
     }
     return false;
   };
 
   const signup = (name: string, email: string, password: string):boolean => {
-    // Mock signup logic
     const newUser: User = {
         id: `user-${Date.now()}`,
         name: name,
+        email: email,
         avatarUrl: `https://i.pravatar.cc/150?u=${name}`,
-        location: { lat: 12.9716, lon: 77.5946 } // Default to Bangalore
+        location: { lat: 13.0471, lon: 80.1873 }, // Default to Chennai
+        isAdmin: false
     };
     setUsers(prev => [...prev, newUser]);
     setCurrentUserId(newUser.id);
     setIsAuthenticated(true);
+    setIsAdmin(false);
     return true;
   };
   
   const logout = () => {
       setIsAuthenticated(false);
       setCurrentUserId(null);
+      setIsAdmin(false);
   };
 
   const getUserById = (id: string) => users.find(u => u.id === id);
@@ -160,12 +189,14 @@ export const useFitMatchData = () => {
     chats,
     currentUser,
     isAuthenticated,
+    isAdmin,
     nearbyActivities,
     myActivities,
     joinActivity,
     leaveActivity,
     createActivity,
     deleteActivity,
+    deleteUser,
     sendMessage,
     getUserById,
     getSportById,

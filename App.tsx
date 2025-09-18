@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Page } from './types';
 import { Sidebar } from './components/Sidebar';
@@ -12,6 +13,7 @@ import { NotificationHandler } from './components/NotificationHandler';
 import { ICONS } from './constants';
 import { Login } from './components/Login';
 import { Signup } from './components/Signup';
+import { AdminDashboard } from './components/AdminDashboard';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState<Page>(Page.Home);
@@ -40,12 +42,18 @@ const App = () => {
     }
   }, [theme]);
   
-  // When user logs out, reset the view to the Home page for the next login
+  // When user logs in or out, set the correct default page
   useEffect(() => {
-    if (!appData.isAuthenticated) {
-      setCurrentPage(Page.Home);
+    if (appData.isAuthenticated) {
+        if (appData.isAdmin) {
+            setCurrentPage(Page.AdminDashboard);
+        } else {
+            setCurrentPage(Page.Home);
+        }
+    } else {
+        setCurrentPage(Page.Home); // Reset for next login
     }
-  }, [appData.isAuthenticated])
+  }, [appData.isAuthenticated, appData.isAdmin])
 
   const toggleTheme = () => {
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
@@ -53,6 +61,8 @@ const App = () => {
   
   const renderPage = () => {
     switch (currentPage) {
+      case Page.AdminDashboard:
+        return appData.isAdmin ? <AdminDashboard data={appData} /> : <Dashboard data={appData} setCurrentPage={setCurrentPage} />;
       case Page.Home:
         return <Dashboard data={appData} setCurrentPage={setCurrentPage} />;
       case Page.CreateActivity:
@@ -99,6 +109,7 @@ const App = () => {
         isSidebarOpen={isSidebarOpen}
         setSidebarOpen={setSidebarOpen}
         logout={appData.logout}
+        isAdmin={appData.isAdmin}
       />
       <div className="flex-1 flex flex-col h-screen">
           <header className="lg:hidden flex items-center justify-between p-4 border-b border-light-border dark:border-dark-border bg-light-bg-secondary dark:bg-dark-bg-secondary flex-shrink-0">

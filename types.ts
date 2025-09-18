@@ -1,6 +1,7 @@
 
 export enum Page {
   Home = 'Home',
+  AdminDashboard = 'Admin Dashboard',
   CreateActivity = 'Create Activity',
   MyActivities = 'My Activities',
   Events = 'Events',
@@ -11,8 +12,10 @@ export enum Page {
 export interface User {
   id: string;
   name: string;
+  email?: string; // Add email for user management
   avatarUrl: string;
   location: { lat: number; lon: number };
+  isAdmin?: boolean;
 }
 
 export interface Sport {

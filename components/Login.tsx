@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { FitMatchData } from '../useFitMatchData';
 import { ICONS, APP_NAME, APP_TAGLINE } from '../constants';
@@ -71,6 +72,12 @@ export const Login: React.FC<LoginProps> = ({ data, setAuthPage }) => {
                         </button>
                     </p>
                 </form>
+
+                <div className="mt-4 bg-light-bg-secondary dark:bg-dark-bg-secondary p-4 border border-light-border dark:border-dark-border text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                    <h3 className="font-bold text-light-text dark:text-dark-text mb-2">Test Credentials:</h3>
+                    <p><b>User (Chennai):</b> user@fitmatch.com / password123</p>
+                    <p><b>Admin:</b> admin@fitmatch.com / admin123</p>
+                </div>
             </div>
         </div>
     );
