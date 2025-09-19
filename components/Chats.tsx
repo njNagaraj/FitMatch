@@ -75,7 +75,7 @@ export const Chats: React.FC = () => {
 
   return (
     <div className="h-full flex">
-        <div className={`w-full lg:w-1/3 border-r border-light-border dark:border-dark-border overflow-y-auto ${selectedChatId ? 'hidden lg:block' : 'block'}`}>
+        <div className={`w-full lg:w-1/3 border-r border-light-border dark:border-dark-border overflow-y-auto ${selectedChatId ? 'hidden lg:block' : 'block'}`} data-tour-id="chats-list">
             <div className="p-4 border-b border-light-border dark:border-dark-border">
                 <h1 className="text-xl font-bold">Chats</h1>
             </div>

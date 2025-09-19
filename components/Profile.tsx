@@ -114,7 +114,7 @@ export const Profile: React.FC = () => {
                                     <StatBox label="Activities Created" value={createdCount} />
                                     <StatBox label="Activities Joined" value={joinedCount} />
                                 </div>
-                                <button onClick={() => setIsEditing(true)} className="w-full sm:w-auto bg-primary hover:bg-primary-dark text-white font-semibold px-6 py-2 transition-colors">
+                                <button onClick={() => setIsEditing(true)} className="w-full sm:w-auto bg-primary hover:bg-primary-dark text-white font-semibold px-6 py-2 transition-colors" data-tour-id="profile-edit">
                                     Edit Profile
                                 </button>
                             </>

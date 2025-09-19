@@ -14,6 +14,7 @@ import { Signup } from './components/Signup';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ToastContainer } from './components/Toast';
 import { AppProvider, useAppContext } from './contexts/AppContext';
+import { OnboardingTour } from './components/OnboardingTour';
 
 // The main App component is now just the provider
 const App = () => {
@@ -48,7 +49,8 @@ const AppContent = () => {
     locationPreference, 
     setLocationPreference, 
     toasts, 
-    removeToast 
+    removeToast,
+    isTourOpen
   } = useAppContext();
 
   useEffect(() => {
@@ -152,6 +154,7 @@ const AppContent = () => {
             {renderPage()}
           </main>
       </div>
+      {isTourOpen && <OnboardingTour setCurrentPage={setCurrentPage} />}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
       <NotificationHandler />
     </div>

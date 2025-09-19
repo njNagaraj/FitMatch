@@ -101,21 +101,23 @@ export const Events: React.FC = () => {
           </div>
         </div>
         
-        {filteredEvents.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredEvents.map(event => (
-              <EventCard 
-                key={event.id} 
-                event={event} 
-                isAdmin={isAdmin}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="text-center py-10 text-light-text-secondary dark:text-dark-text-secondary">No events found for the selected city.</p>
-        )}
+        <div data-tour-id="events-list">
+            {filteredEvents.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredEvents.map(event => (
+                <EventCard 
+                    key={event.id} 
+                    event={event} 
+                    isAdmin={isAdmin}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                />
+                ))}
+            </div>
+            ) : (
+            <p className="text-center py-10 text-light-text-secondary dark:text-dark-text-secondary">No events found for the selected city.</p>
+            )}
+        </div>
       </div>
     </>
   );

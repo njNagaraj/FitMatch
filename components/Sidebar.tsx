@@ -19,7 +19,8 @@ const NavItem: React.FC<{
   icon: React.ReactNode;
   isActive: boolean;
   onClick: () => void;
-}> = ({ label, icon, isActive, onClick }) => (
+  [key: string]: any; // Allow other props like data-tour-id
+}> = ({ label, icon, isActive, onClick, ...props }) => (
   <button
     onClick={onClick}
     className={`flex items-center w-full px-4 py-3 my-1 text-sm font-medium transition-colors duration-200 rounded-lg ${
@@ -28,6 +29,7 @@ const NavItem: React.FC<{
         : 'text-light-text-secondary dark:text-dark-text-secondary hover:bg-primary-light dark:hover:bg-dark-bg'
     }`}
     aria-current={isActive ? 'page' : undefined}
+    {...props}
   >
     <span className="mr-3">{icon}</span>
     {label}
@@ -82,20 +84,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, t
         </button>
       </div>
 
-      <nav className="flex-grow">
-        {navLinks.map(({ label, icon }) => (
-          <NavItem
-            key={label}
-            label={label.toString()}
-            icon={icon}
-            isActive={currentPage === label}
-            onClick={() => handlePageChange(label)}
-          />
-        ))}
+      <nav className="flex-grow" data-tour-id="sidebar-nav">
+        {navLinks.map(({ label, icon }) => {
+          const navItemProps: {[key: string]: any} = {};
+          if (label === Page.CreateActivity) navItemProps['data-tour-id'] = 'create-activity-nav';
+          if (label === Page.MyActivities) navItemProps['data-tour-id'] = 'my-activities-nav';
+
+          return (
+            <NavItem
+              key={label}
+              label={label.toString()}
+              icon={icon}
+              isActive={currentPage === label}
+              onClick={() => handlePageChange(label)}
+              {...navItemProps}
+            />
+          );
+        })}
       </nav>
 
       <div className="mt-auto space-y-2">
-         <div className="px-2 py-2">
+         <div className="px-2 py-2" data-tour-id="location-switcher">
             <div className="text-xs text-light-text-secondary dark:text-dark-text-secondary mb-2 px-2 font-medium">Location Basis</div>
             <div className="flex bg-light-bg dark:bg-dark-bg p-1 rounded-lg border border-light-border dark:border-dark-border">
                 <button 

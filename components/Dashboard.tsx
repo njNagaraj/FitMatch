@@ -67,7 +67,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage }) => {
       </section>
 
       {/* Find Activities */}
-      <section>
+      <section data-tour-id="find-activities">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
           <h2 className="text-xl font-bold text-light-text dark:text-dark-text mb-4 sm:mb-0">Find Activities Near You</h2>
           <button 

@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Activity, User, Sport, Event, Chat, Message, Toast } from '../types';
 import { MOCK_ACTIVITIES, MOCK_USERS, MOCK_SPORTS, MOCK_EVENTS, MOCK_CHATS } from '../data';
 import { VIEW_RADIUS_KM } from '../constants';
+import { TOUR_STEPS } from '../tourSteps';
 
 // Haversine formula to calculate distance between two lat/lon points in km
 const haversineDistance = (
@@ -38,6 +39,9 @@ export const useAppData = () => {
   
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [locationPreference, setLocationPreference] = useState<'current' | 'home'>('current');
+  
+  const [isTourOpen, setIsTourOpen] = useState(false);
+  const [tourStepIndex, setTourStepIndex] = useState(0);
 
   const [userCredentials, setUserCredentials] = useState({
         'admin@fitmatch.com': 'admin123',
@@ -298,6 +302,14 @@ export const useAppData = () => {
     return false;
   };
 
+  const startTour = () => {
+    const hasCompletedTour = localStorage.getItem('fitmatch_hasCompletedTour');
+    if (!hasCompletedTour) {
+      setTourStepIndex(0);
+      setIsTourOpen(true);
+    }
+  };
+  
   const signup = (name: string, email: string, password: string):boolean => {
     if (users.some(u => u.email === email)) {
       addToast('An account with this email already exists.', 'error');
@@ -317,6 +329,7 @@ export const useAppData = () => {
     setIsAuthenticated(true);
     setIsAdmin(false);
     localStorage.setItem('fitmatch_userId', newUser.id);
+    startTour();
     return true;
   };
   
@@ -325,6 +338,25 @@ export const useAppData = () => {
       setCurrentUserId(null);
       setIsAdmin(false);
       localStorage.removeItem('fitmatch_userId');
+  };
+
+  const endTour = () => {
+    setIsTourOpen(false);
+    localStorage.setItem('fitmatch_hasCompletedTour', 'true');
+  };
+
+  const nextTourStep = () => {
+    if (tourStepIndex < TOUR_STEPS.length - 1) {
+      setTourStepIndex(prev => prev + 1);
+    } else {
+      endTour();
+    }
+  };
+
+  const prevTourStep = () => {
+    if (tourStepIndex > 0) {
+      setTourStepIndex(prev => prev - 1);
+    }
   };
 
   const getUserById = (id: string) => users.find(u => u.id === id);
@@ -365,6 +397,12 @@ export const useAppData = () => {
     toasts,
     addToast,
     removeToast,
+    isTourOpen,
+    tourStepIndex,
+    startTour,
+    endTour,
+    nextTourStep,
+    prevTourStep,
   };
 };
 
