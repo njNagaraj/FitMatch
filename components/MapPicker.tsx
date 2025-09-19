@@ -11,6 +11,7 @@ interface MapPickerProps {
 }
 
 interface NominatimResult {
+  place_id: number;
   lat: string;
   lon: string;
   display_name: string;
@@ -23,9 +24,10 @@ export const MapPicker: React.FC<MapPickerProps> = ({ isOpen, onClose, onLocatio
 
   const [selectedLocation, setSelectedLocation] = useState(initialCenter);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<NominatimResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Effect to initialize the map instance once when the modal opens
+  // Effect to initialize the map instance once
   useEffect(() => {
     if (isOpen && mapContainerRef.current && !mapRef.current) {
       const map = L.map(mapContainerRef.current).setView([initialCenter.lat, initialCenter.lon], 13);
@@ -38,6 +40,7 @@ export const MapPicker: React.FC<MapPickerProps> = ({ isOpen, onClose, onLocatio
       map.on('click', (e: any) => {
         const { lat, lng } = e.latlng;
         setSelectedLocation({ lat, lon: lng });
+        setSearchResults([]); // Clear search results on map click
       });
       
       mapRef.current = map;
@@ -48,10 +51,12 @@ export const MapPicker: React.FC<MapPickerProps> = ({ isOpen, onClose, onLocatio
   useEffect(() => {
     if (isOpen && mapRef.current) {
       setSelectedLocation(initialCenter);
+      setSearchQuery('');
+      setSearchResults([]);
       setTimeout(() => {
         mapRef.current.invalidateSize();
         mapRef.current.setView([initialCenter.lat, initialCenter.lon], 13);
-      }, 100); // Small delay to ensure modal is visible
+      }, 100);
     }
   }, [isOpen, initialCenter]);
 
@@ -68,12 +73,12 @@ export const MapPicker: React.FC<MapPickerProps> = ({ isOpen, onClose, onLocatio
     e.preventDefault();
     if (!searchQuery.trim()) return;
     setIsSearching(true);
+    setSearchResults([]);
     try {
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(searchQuery)}`);
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`);
         const data: NominatimResult[] = await response.json();
         if (data && data.length > 0) {
-            const { lat, lon } = data[0];
-            setSelectedLocation({ lat: parseFloat(lat), lon: parseFloat(lon) });
+            setSearchResults(data);
         } else {
             alert('Location not found.');
         }
@@ -83,6 +88,11 @@ export const MapPicker: React.FC<MapPickerProps> = ({ isOpen, onClose, onLocatio
     } finally {
         setIsSearching(false);
     }
+  };
+
+  const handleSuggestionClick = (result: NominatimResult) => {
+    setSelectedLocation({ lat: parseFloat(result.lat), lon: parseFloat(result.lon) });
+    setSearchResults([]);
   };
   
   const handleConfirm = async () => {
@@ -118,7 +128,7 @@ export const MapPicker: React.FC<MapPickerProps> = ({ isOpen, onClose, onLocatio
           <h2 className="text-lg font-bold">Select Location</h2>
           <button onClick={onClose} className="text-2xl font-bold p-1 leading-none" aria-label="Close">&times;</button>
         </header>
-        <div className="p-4 flex-shrink-0">
+        <div className="p-4 flex-shrink-0 relative">
           <form onSubmit={handleSearch} className="flex gap-2">
             <input 
               type="text" 
@@ -131,6 +141,19 @@ export const MapPicker: React.FC<MapPickerProps> = ({ isOpen, onClose, onLocatio
               {isSearching ? '...' : 'Search'}
             </button>
           </form>
+          {searchResults.length > 0 && (
+            <div className="absolute top-full left-4 right-4 mt-1 bg-light-bg-secondary dark:bg-dark-bg-secondary border border-light-border dark:border-dark-border shadow-lg max-h-60 overflow-y-auto z-10">
+              {searchResults.map(result => (
+                <button 
+                  key={result.place_id} 
+                  onClick={() => handleSuggestionClick(result)}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-primary-light dark:hover:bg-dark-bg"
+                >
+                  {result.display_name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div ref={mapContainerRef} className="flex-grow bg-gray-200" style={{ minHeight: 0 }}></div>
         <footer className="p-4 border-t border-light-border dark:border-dark-border flex justify-end gap-4 flex-shrink-0">
