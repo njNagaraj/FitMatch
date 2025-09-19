@@ -25,6 +25,7 @@ export const MapPicker: React.FC<MapPickerProps> = ({ isOpen, onClose, onLocatio
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
+  // Effect to initialize the map instance once when the modal opens
   useEffect(() => {
     if (isOpen && mapContainerRef.current && !mapRef.current) {
       const map = L.map(mapContainerRef.current).setView([initialCenter.lat, initialCenter.lon], 13);
@@ -32,6 +33,8 @@ export const MapPicker: React.FC<MapPickerProps> = ({ isOpen, onClose, onLocatio
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
 
+      markerRef.current = L.marker([initialCenter.lat, initialCenter.lon]).addTo(map);
+      
       map.on('click', (e: any) => {
         const { lat, lng } = e.latlng;
         setSelectedLocation({ lat, lon: lng });
@@ -39,27 +42,27 @@ export const MapPicker: React.FC<MapPickerProps> = ({ isOpen, onClose, onLocatio
       
       mapRef.current = map;
     }
-    
+  }, [isOpen]);
+
+  // Effect to handle modal opening: reset state and fix map rendering
+  useEffect(() => {
     if (isOpen && mapRef.current) {
-        // Every time the selected location changes, update the map view and marker
-        mapRef.current.setView([selectedLocation.lat, selectedLocation.lon], mapRef.current.getZoom());
-        if (markerRef.current) {
-            markerRef.current.setLatLng([selectedLocation.lat, selectedLocation.lon]);
-        } else {
-            markerRef.current = L.marker([selectedLocation.lat, selectedLocation.lon]).addTo(mapRef.current);
-        }
+      setSelectedLocation(initialCenter);
+      setTimeout(() => {
+        mapRef.current.invalidateSize();
+        mapRef.current.setView([initialCenter.lat, initialCenter.lon], 13);
+      }, 100); // Small delay to ensure modal is visible
     }
-    
-    // This effect ensures the map renders correctly when the modal is opened
-    useEffect(() => {
-        if (isOpen && mapRef.current) {
-            setSelectedLocation(initialCenter); // Reset to initial center when opened
-            setTimeout(() => mapRef.current.invalidateSize(), 100);
-        }
-    }, [isOpen, initialCenter]);
+  }, [isOpen, initialCenter]);
 
-
-  }, [isOpen, initialCenter, selectedLocation]);
+  // Effect to update the map view and marker when selectedLocation changes
+  useEffect(() => {
+    if (isOpen && mapRef.current && markerRef.current) {
+      const newLatLng = [selectedLocation.lat, selectedLocation.lon];
+      mapRef.current.setView(newLatLng, mapRef.current.getZoom());
+      markerRef.current.setLatLng(newLatLng);
+    }
+  }, [selectedLocation, isOpen]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,7 +116,7 @@ export const MapPicker: React.FC<MapPickerProps> = ({ isOpen, onClose, onLocatio
       <div className="bg-light-bg-secondary dark:bg-dark-bg-secondary w-full max-w-2xl h-[90vh] flex flex-col border border-light-border dark:border-dark-border">
         <header className="p-4 border-b border-light-border dark:border-dark-border flex-shrink-0 flex justify-between items-center">
           <h2 className="text-lg font-bold">Select Location</h2>
-          <button onClick={onClose} aria-label="Close">&times;</button>
+          <button onClick={onClose} className="text-2xl font-bold p-1 leading-none" aria-label="Close">&times;</button>
         </header>
         <div className="p-4 flex-shrink-0">
           <form onSubmit={handleSearch} className="flex gap-2">
