@@ -1,4 +1,3 @@
-
 export enum Page {
   Home = 'Home',
   AdminDashboard = 'Admin Dashboard',
@@ -12,9 +11,10 @@ export enum Page {
 export interface User {
   id: string;
   name: string;
-  email?: string; // Add email for user management
+  email?: string;
   avatarUrl: string;
-  location: { lat: number; lon: number };
+  currentLocation: { lat: number; lon: number };
+  homeLocation?: { lat: number; lon: number; name: string };
   isAdmin?: boolean;
 }
 

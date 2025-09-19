@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { FitMatchData } from '../useFitMatchData';
 import { Page, Sport } from '../types';
@@ -80,7 +79,7 @@ export const CreateActivity: React.FC<CreateActivityProps> = ({ data, setCurrent
       title,
       dateTime: new Date(dateTime),
       locationName,
-      locationCoords: currentUser.location,
+      locationCoords: currentUser.currentLocation,
       activityType,
       level,
       partnersNeeded: Number(partnersNeeded),

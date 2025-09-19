@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Page } from '../types';
+import { Page, User } from '../types';
 import { ICONS, APP_NAME, APP_TAGLINE } from '../constants';
 
 interface SidebarProps {
@@ -12,6 +11,9 @@ interface SidebarProps {
   setSidebarOpen: (isOpen: boolean) => void;
   logout: () => void;
   isAdmin: boolean;
+  currentUser?: User | null;
+  locationPreference: 'current' | 'home';
+  setLocationPreference: (preference: 'current' | 'home') => void;
 }
 
 const NavItem: React.FC<{
@@ -22,7 +24,7 @@ const NavItem: React.FC<{
 }> = ({ label, icon, isActive, onClick }) => (
   <button
     onClick={onClick}
-    className={`flex items-center w-full px-4 py-3 my-1 text-sm font-medium transition-colors duration-200 ${
+    className={`flex items-center w-full px-4 py-3 my-1 text-sm font-medium transition-colors duration-200 rounded-lg ${
       isActive
         ? 'bg-primary text-white'
         : 'text-light-text-secondary dark:text-dark-text-secondary hover:bg-primary-light dark:hover:bg-dark-bg'
@@ -34,7 +36,7 @@ const NavItem: React.FC<{
   </button>
 );
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, theme, toggleTheme, isSidebarOpen, setSidebarOpen, logout, isAdmin }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, theme, toggleTheme, isSidebarOpen, setSidebarOpen, logout, isAdmin, currentUser, locationPreference, setLocationPreference }) => {
   
   const handlePageChange = (page: Page) => {
     setCurrentPage(page);
@@ -49,9 +51,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, t
     { label: Page.Profile, icon: ICONS.profile },
   ];
 
-  const navLinks = isAdmin
-    ? [{ label: Page.AdminDashboard, icon: ICONS.adminDashboard }, ...baseNavLinks]
-    : [{ label: Page.Home, icon: ICONS.home }, ...baseNavLinks];
+  const adminLinks = [
+      { label: Page.AdminDashboard, icon: ICONS.adminDashboard },
+      ...baseNavLinks.filter(link => link.label !== Page.Profile), // Remove profile from admin base links for clarity
+      { label: Page.Profile, icon: ICONS.profile },
+  ];
+
+  const userLinks = [
+      { label: Page.Home, icon: ICONS.home },
+      ...baseNavLinks
+  ];
+
+  const navLinks = isAdmin ? adminLinks : userLinks;
 
   return (
     <aside className={`w-64 h-screen bg-light-bg-secondary dark:bg-dark-bg-secondary p-4 flex flex-col flex-shrink-0 border-r border-light-border dark:border-dark-border
@@ -59,7 +70,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, t
       ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
       <div className="flex items-center justify-between px-2 mb-8">
         <div className="flex items-center">
-            <div className="bg-primary p-2 mr-3 text-white">
+            <div className="bg-primary p-2 mr-3 text-white rounded-lg">
             {ICONS.logo}
             </div>
             <div>
@@ -84,10 +95,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, t
         ))}
       </nav>
 
-      <div className="mt-auto">
+      <div className="mt-auto space-y-2">
+         <div className="px-2 py-2">
+            <div className="text-xs text-light-text-secondary dark:text-dark-text-secondary mb-2 px-2 font-medium">Location Basis</div>
+            <div className="flex bg-light-bg dark:bg-dark-bg p-1 rounded-lg border border-light-border dark:border-dark-border">
+                <button 
+                    onClick={() => setLocationPreference('current')}
+                    className={`flex-1 py-1 text-sm rounded-md transition-colors ${locationPreference === 'current' ? 'bg-primary text-white' : 'hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                >
+                    Current
+                </button>
+                <button 
+                    onClick={() => { if (currentUser?.homeLocation) { setLocationPreference('home') } }}
+                    className={`flex-1 py-1 text-sm rounded-md transition-colors ${locationPreference === 'home' ? 'bg-primary text-white' : 'hover:bg-gray-200 dark:hover:bg-gray-700'} disabled:opacity-50 disabled:cursor-not-allowed`}
+                    disabled={!currentUser?.homeLocation}
+                    title={!currentUser?.homeLocation ? "Set a home location in your profile first" : ""}
+                >
+                    Home
+                </button>
+            </div>
+        </div>
+
         <button
           onClick={toggleTheme}
-          className="flex items-center w-full px-4 py-3 text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary hover:bg-primary-light dark:hover:bg-dark-bg"
+          className="flex items-center w-full px-4 py-3 text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary hover:bg-primary-light dark:hover:bg-dark-bg rounded-lg"
           aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
         >
           <span className="mr-3">{theme === 'light' ? ICONS.moon : ICONS.sun}</span>

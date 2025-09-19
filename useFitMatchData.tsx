@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { Activity, User, Sport, Event, Chat, Message, Toast } from './types';
 import { MOCK_ACTIVITIES, MOCK_USERS, MOCK_SPORTS, MOCK_EVENTS, MOCK_CHATS } from './data';
@@ -36,16 +35,26 @@ export const useFitMatchData = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [locationPreference, setLocationPreference] = useState<'current' | 'home'>('current');
+
 
   const currentUser = useMemo(() => users.find(u => u.id === currentUserId), [users, currentUserId]);
 
   const nearbyActivities = useMemo(() => {
     if (!currentUser) return [];
+    
+    const searchLocation = 
+        locationPreference === 'home' && currentUser.homeLocation 
+        ? currentUser.homeLocation 
+        : currentUser.currentLocation;
+        
+    if (!searchLocation) return [];
+
     return activities.filter(activity => {
-      const distance = haversineDistance(currentUser.location, activity.locationCoords);
-      return distance <= VIEW_RADIUS_KM && activity.creatorId !== currentUser.id;
+      const distance = haversineDistance(searchLocation, activity.locationCoords);
+      return distance <= VIEW_RADIUS_KM && !activity.participants.includes(currentUser.id);
     });
-  }, [activities, currentUser]);
+  }, [activities, currentUser, locationPreference]);
 
   const myActivities = useMemo(() => {
       if(!currentUser) return [];
@@ -165,6 +174,16 @@ export const useFitMatchData = () => {
     }));
   };
 
+  const updateUserProfile = (updatedData: Partial<Pick<User, 'name' | 'homeLocation'>>) => {
+    if (!currentUser) return;
+    setUsers(prevUsers => prevUsers.map(user => 
+        user.id === currentUserId 
+        ? { ...user, ...updatedData }
+        : user
+    ));
+    addToast('Profile updated successfully!', 'success');
+  };
+
   const login = (email: string, password: string):boolean => {
     const userToLogin = MOCK_USERS.find(u => u.email === email);
 
@@ -190,7 +209,7 @@ export const useFitMatchData = () => {
         name: name,
         email: email,
         avatarUrl: `https://i.pravatar.cc/150?u=${name}`,
-        location: { lat: 13.0471, lon: 80.1873 }, // Default to Chennai
+        currentLocation: { lat: 13.0471, lon: 80.1873 }, // Default to Chennai
         isAdmin: false
     };
     setUsers(prev => [...prev, newUser]);
@@ -221,12 +240,15 @@ export const useFitMatchData = () => {
     isAdmin,
     nearbyActivities,
     myActivities,
+    locationPreference,
+    setLocationPreference,
     joinActivity,
     leaveActivity,
     createActivity,
     deleteActivity,
     deleteUser,
     sendMessage,
+    updateUserProfile,
     getUserById,
     getSportById,
     getActivityById,

@@ -1,4 +1,3 @@
-
 import { User, Sport, Activity, Event, Chat } from './types';
 import { TODAY } from './constants';
 
@@ -16,14 +15,46 @@ const addDays = (date: Date, d: number) => {
 
 export const MOCK_USERS: User[] = [
   // Admin User
-  { id: 'admin-user', name: 'Admin', email: 'admin@fitmatch.com', avatarUrl: 'https://i.pravatar.cc/150?u=admin-user', location: { lat: 12.9716, lon: 77.5946 }, isAdmin: true },
+  { id: 'admin-user', name: 'Admin', email: 'admin@fitmatch.com', avatarUrl: 'https://i.pravatar.cc/150?u=admin-user', currentLocation: { lat: 12.9716, lon: 77.5946 }, isAdmin: true },
 
   // Regular Users
-  { id: 'user-1', name: 'Nagaraj', email: 'user@fitmatch.com', avatarUrl: 'https://i.pravatar.cc/150?u=user-1', location: { lat: 13.0471, lon: 80.1873 } }, // Chennai, Valasaravakam
-  { id: 'user-2', name: 'Priya', email: 'priya@test.com', avatarUrl: 'https://i.pravatar.cc/150?u=user-2', location: { lat: 13.0480, lon: 80.1890 } }, // Chennai, Valasaravakam
-  { id: 'user-3', name: 'Maria', email: 'maria@test.com', avatarUrl: 'https://i.pravatar.cc/150?u=user-3', location: { lat: 12.9700, lon: 77.5920 } }, // Bangalore
-  { id: 'user-4', name: 'Sam', email: 'sam@test.com', avatarUrl: 'https://i.pravatar.cc/150?u=user-4', location: { lat: 12.9780, lon: 77.6000 } },   // Bangalore
-  { id: 'user-5', name: 'Chloe', email: 'chloe@test.com', avatarUrl: 'https://i.pravatar.cc/150?u=user-5', location: { lat: 13.0000, lon: 77.6100 } }, // Bangalore
+  { 
+    id: 'user-1', 
+    name: 'Nagaraj', 
+    email: 'user@fitmatch.com', 
+    avatarUrl: 'https://i.pravatar.cc/150?u=user-1', 
+    currentLocation: { lat: 13.0471, lon: 80.1873 }, // Chennai, Valasaravakam
+    homeLocation: { lat: 13.0471, lon: 80.1873, name: 'Valasaravakam Home' }
+  },
+  { 
+    id: 'user-2', 
+    name: 'Priya', 
+    email: 'priya@test.com', 
+    avatarUrl: 'https://i.pravatar.cc/150?u=user-2', 
+    currentLocation: { lat: 13.0480, lon: 80.1890 } // Chennai, Valasaravakam
+  },
+  { 
+    id: 'user-3', 
+    name: 'Maria', 
+    email: 'maria@test.com', 
+    avatarUrl: 'https://i.pravatar.cc/150?u=user-3', 
+    currentLocation: { lat: 12.9700, lon: 77.5920 }, // Bangalore
+    homeLocation: { lat: 12.9716, lon: 77.5946, name: 'Central Bangalore' }
+  },
+  { 
+    id: 'user-4', 
+    name: 'Sam', 
+    email: 'sam@test.com', 
+    avatarUrl: 'https://i.pravatar.cc/150?u=user-4', 
+    currentLocation: { lat: 12.9780, lon: 77.6000 }   // Bangalore
+  },
+  { 
+    id: 'user-5', 
+    name: 'Chloe', 
+    email: 'chloe@test.com', 
+    avatarUrl: 'https://i.pravatar.cc/150?u=user-5', 
+    currentLocation: { lat: 13.0000, lon: 77.6100 } // Bangalore
+  },
 ];
 
 export const MOCK_SPORTS: Sport[] = [

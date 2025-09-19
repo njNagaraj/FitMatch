@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Page } from './types';
 import { Sidebar } from './components/Sidebar';
@@ -31,6 +30,7 @@ const App = () => {
   });
 
   const appData = useFitMatchData();
+  const { currentUser, locationPreference, setLocationPreference } = appData;
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -111,6 +111,9 @@ const App = () => {
         setSidebarOpen={setSidebarOpen}
         logout={appData.logout}
         isAdmin={appData.isAdmin}
+        currentUser={currentUser}
+        locationPreference={locationPreference}
+        setLocationPreference={setLocationPreference}
       />
       <div className="flex-1 flex flex-col h-screen">
           <header className="lg:hidden flex items-center justify-between p-4 border-b border-light-border dark:border-dark-border bg-light-bg-secondary dark:bg-dark-bg-secondary flex-shrink-0">
