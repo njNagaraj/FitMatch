@@ -260,6 +260,30 @@ export const useAppData = () => {
     ));
   };
 
+  const createEvent = (eventData: Omit<Event, 'id'>) => {
+    const newEvent: Event = {
+      ...eventData,
+      id: `event-${Date.now()}`,
+    };
+    setEvents(prev => [newEvent, ...prev].sort((a,b) => a.date.getTime() - b.date.getTime()));
+    addToast('Event created successfully!', 'success');
+  };
+
+  const updateEvent = (eventId: string, updatedData: Omit<Event, 'id'>) => {
+    setEvents(prev => prev.map(event =>
+      event.id === eventId ? { ...event, ...updatedData } : event
+    ));
+    addToast('Event updated successfully!', 'success');
+  };
+
+  const deleteEvent = (eventId: string) => {
+    const eventToDelete = events.find(e => e.id === eventId);
+    if(eventToDelete) {
+      setEvents(prev => prev.filter(event => event.id !== eventId));
+      addToast(`Event "${eventToDelete.title}" deleted.`, 'info');
+    }
+  };
+
   const login = (email: string, password: string):boolean => {
     const userToLogin = users.find(u => u.email === email);
 
@@ -332,6 +356,9 @@ export const useAppData = () => {
     getUserById,
     getSportById,
     getActivityById,
+    createEvent,
+    updateEvent,
+    deleteEvent,
     login,
     signup,
     logout,
