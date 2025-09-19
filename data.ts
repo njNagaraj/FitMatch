@@ -14,25 +14,39 @@ const addDays = (date: Date, d: number) => {
 };
 
 export const MOCK_USERS: User[] = [
-  // Admin User
-  { id: 'admin-user', name: 'Admin', email: 'admin@fitmatch.com', avatarUrl: 'https://i.pravatar.cc/150?u=admin-user', currentLocation: { lat: 12.9716, lon: 77.5946 }, isAdmin: true },
-
-  // Regular Users
+  // ==> Users with login credentials <==
+  { 
+    id: 'admin-user', 
+    name: 'Admin', 
+    email: 'admin@fitmatch.com', 
+    avatarUrl: 'https://i.pravatar.cc/150?u=admin-user', 
+    currentLocation: { lat: 12.9716, lon: 77.5946 }, // Bangalore
+    isAdmin: true 
+  },
   { 
     id: 'user-1', 
-    name: 'Nagaraj', 
-    email: 'user@fitmatch.com', 
+    name: 'Nagaraj (Chennai)', 
+    email: 'nagaraj@fitmatch.com', 
     avatarUrl: 'https://i.pravatar.cc/150?u=user-1', 
-    currentLocation: { lat: 13.0471, lon: 80.1873 }, // Chennai, Valasaravakam
-    homeLocation: { lat: 13.0471, lon: 80.1873, name: 'Valasaravakam Home' }
+    currentLocation: { lat: 13.0471, lon: 80.1873 }, // Chennai
+    homeLocation: { lat: 13.0471, lon: 80.1873, name: 'Home in Chennai' }
   },
   { 
     id: 'user-2', 
-    name: 'Priya', 
-    email: 'priya@test.com', 
+    name: 'Priya (Chennai)', 
+    email: 'priya@fitmatch.com', 
     avatarUrl: 'https://i.pravatar.cc/150?u=user-2', 
-    currentLocation: { lat: 13.0480, lon: 80.1890 } // Chennai, Valasaravakam
+    currentLocation: { lat: 13.0480, lon: 80.1890 } // Chennai
   },
+  { 
+    id: 'user-4', // Using existing ID to avoid breaking activities
+    name: 'Sam (Bangalore)', 
+    email: 'sam@fitmatch.com', 
+    avatarUrl: 'https://i.pravatar.cc/150?u=user-4', 
+    currentLocation: { lat: 12.9780, lon: 77.6000 }   // Bangalore
+  },
+
+  // ==> Other users for populating activities <==
   { 
     id: 'user-3', 
     name: 'Maria', 
@@ -40,13 +54,6 @@ export const MOCK_USERS: User[] = [
     avatarUrl: 'https://i.pravatar.cc/150?u=user-3', 
     currentLocation: { lat: 12.9700, lon: 77.5920 }, // Bangalore
     homeLocation: { lat: 12.9716, lon: 77.5946, name: 'Central Bangalore' }
-  },
-  { 
-    id: 'user-4', 
-    name: 'Sam', 
-    email: 'sam@test.com', 
-    avatarUrl: 'https://i.pravatar.cc/150?u=user-4', 
-    currentLocation: { lat: 12.9780, lon: 77.6000 }   // Bangalore
   },
   { 
     id: 'user-5', 

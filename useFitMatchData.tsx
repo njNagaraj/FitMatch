@@ -185,21 +185,23 @@ export const useFitMatchData = () => {
   };
 
   const login = (email: string, password: string):boolean => {
-    const userToLogin = MOCK_USERS.find(u => u.email === email);
+    // Define credentials here since they aren't in the user model
+    const userCredentials: { [email: string]: string } = {
+        'admin@fitmatch.com': 'admin123',
+        'nagaraj@fitmatch.com': 'password123',
+        'priya@fitmatch.com': 'password123',
+        'sam@fitmatch.com': 'password123',
+    };
 
-    if (email === 'admin@fitmatch.com' && password === 'admin123' && userToLogin?.isAdmin) {
+    const userToLogin = users.find(u => u.email === email);
+
+    if (userToLogin && userCredentials[email] === password) {
         setCurrentUserId(userToLogin.id);
         setIsAuthenticated(true);
-        setIsAdmin(true);
+        setIsAdmin(!!userToLogin.isAdmin);
         return true;
     }
-    
-    if (email === 'user@fitmatch.com' && password === 'password123' && userToLogin) {
-        setCurrentUserId(userToLogin.id);
-        setIsAuthenticated(true);
-        setIsAdmin(false);
-        return true;
-    }
+
     return false;
   };
 
