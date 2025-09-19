@@ -43,9 +43,24 @@ const App = () => {
     }
   }, [theme]);
   
-  // When user logs in or out, set the correct default page
+  // When user logs in or out, set the correct default page and get location
   useEffect(() => {
     if (appData.isAuthenticated) {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    appData.updateCurrentUserLocation({ lat: latitude, lon: longitude });
+                },
+                (error) => {
+                    console.error("Geolocation error:", error);
+                    appData.addToast("Could not get location. Using last known.", "error");
+                }
+            );
+        } else {
+            appData.addToast("Geolocation is not supported by this browser.", "error");
+        }
+
         if (appData.isAdmin) {
             setCurrentPage(Page.AdminDashboard);
         } else {
@@ -54,7 +69,7 @@ const App = () => {
     } else {
         setCurrentPage(Page.Home); // Reset for next login
     }
-  }, [appData.isAuthenticated, appData.isAdmin])
+  }, [appData.isAuthenticated, appData.isAdmin]);
 
   const toggleTheme = () => {
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));

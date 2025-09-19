@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FitMatchData } from '../useFitMatchData';
 import { User } from '../types';
+import { MapPicker } from './MapPicker';
 
 const StatBox: React.FC<{ label: string; value: number | string }> = ({ label, value }) => (
     <div className="bg-light-bg dark:bg-dark-bg p-4 text-center border border-light-border dark:border-dark-border">
@@ -24,6 +25,7 @@ export const Profile: React.FC<{ data: FitMatchData }> = ({ data }) => {
     // Form state
     const [name, setName] = useState(currentUser?.name || '');
     const [homeLocation, setHomeLocation] = useState(currentUser?.homeLocation);
+    const [isMapOpen, setIsMapOpen] = useState(false);
 
 
     useEffect(() => {
@@ -57,15 +59,17 @@ export const Profile: React.FC<{ data: FitMatchData }> = ({ data }) => {
         setIsEditing(false);
     }
 
-    const handleSetHomeToCurrent = () => {
-        setHomeLocation({
-            ...currentUser.currentLocation,
-            name: homeLocation?.name || "My Home Location"
-        });
-        addToast("Current location copied. Press Save to confirm.", "info");
-    }
-
     return (
+        <>
+        <MapPicker 
+            isOpen={isMapOpen}
+            onClose={() => setIsMapOpen(false)}
+            initialCenter={homeLocation || currentUser.currentLocation}
+            onLocationSelect={({lat, lon, name}) => {
+                setHomeLocation({ lat, lon, name });
+                addToast("Home location updated. Press Save to confirm.", "info");
+            }}
+        />
         <div className="p-4 sm:p-8 h-full overflow-y-auto">
             <h1 className="text-3xl font-bold text-light-text dark:text-dark-text mb-6">Profile</h1>
             <div className="max-w-2xl mx-auto bg-light-bg-secondary dark:bg-dark-bg-secondary p-8 border border-light-border dark:border-dark-border">
@@ -75,24 +79,20 @@ export const Profile: React.FC<{ data: FitMatchData }> = ({ data }) => {
                         alt={currentUser.name} 
                         className="w-32 h-32 rounded-full mb-4 sm:mb-0 border-4 border-primary flex-shrink-0"
                     />
-                    <div className="flex-grow">
+                    <div className="flex-grow w-full">
                         {isEditing ? (
                            <form onSubmit={handleSave} className="space-y-4">
                                <FormRow label="Full Name">
                                    <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border focus:ring-primary focus:border-primary" />
                                </FormRow>
-                               <FormRow label="Home Location Name">
-                                   <input 
-                                     type="text" 
-                                     placeholder="e.g., Home Office"
-                                     value={homeLocation?.name || ''} 
-                                     onChange={e => setHomeLocation(prev => ({...(prev || currentUser.currentLocation), name: e.target.value}))} 
-                                     className="w-full p-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border focus:ring-primary focus:border-primary" />
-                               </FormRow>
-
-                               <button type="button" onClick={handleSetHomeToCurrent} className="w-full text-sm bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 font-semibold px-4 py-2 transition-colors">
-                                   Use Current Location as Home
-                               </button>
+                               <FormRow label="Home Location">
+                                   <div className="p-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border flex justify-between items-center">
+                                       <p className="text-sm text-light-text dark:text-dark-text truncate pr-4">
+                                           {homeLocation?.name || 'Not set'}
+                                       </p>
+                                       <button type="button" onClick={() => setIsMapOpen(true)} className="px-4 py-1 bg-primary text-white text-sm font-semibold whitespace-nowrap">Set on Map</button>
+                                   </div>
+                                </FormRow>
 
                                <div className="flex gap-2 pt-2">
                                    <button type="submit" className="flex-1 bg-primary hover:bg-primary-dark text-white font-semibold px-4 py-2 transition-colors">
@@ -123,5 +123,6 @@ export const Profile: React.FC<{ data: FitMatchData }> = ({ data }) => {
                 </div>
             </div>
         </div>
+        </>
     );
 };

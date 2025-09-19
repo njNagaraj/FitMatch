@@ -1,5 +1,7 @@
 {
   "name": "FitMatch",
   "description": "Find your perfect workout partner and join local sports activities. Post activities, find partners for running, cycling, football, and more. Join events and chat with your group.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "geolocation"
+  ]
 }

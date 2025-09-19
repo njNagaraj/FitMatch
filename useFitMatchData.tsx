@@ -184,6 +184,15 @@ export const useFitMatchData = () => {
     addToast('Profile updated successfully!', 'success');
   };
 
+  const updateCurrentUserLocation = (coords: { lat: number; lon: number }) => {
+    if (!currentUserId) return;
+    setUsers(prevUsers => prevUsers.map(user =>
+        user.id === currentUserId
+        ? { ...user, currentLocation: coords }
+        : user
+    ));
+  };
+
   const login = (email: string, password: string):boolean => {
     // Define credentials here since they aren't in the user model
     const userCredentials: { [email: string]: string } = {
@@ -251,6 +260,7 @@ export const useFitMatchData = () => {
     deleteUser,
     sendMessage,
     updateUserProfile,
+    updateCurrentUserLocation,
     getUserById,
     getSportById,
     getActivityById,
