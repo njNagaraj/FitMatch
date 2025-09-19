@@ -1,13 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
-import { FitMatchData } from '../useFitMatchData';
+import { useAppContext } from '../contexts/AppContext';
 
-interface NotificationHandlerProps {
-  data: FitMatchData;
-}
-
-export const NotificationHandler: React.FC<NotificationHandlerProps> = ({ data }) => {
-  const { myActivities } = data;
+export const NotificationHandler: React.FC = () => {
+  const { myActivities } = useAppContext();
   const [notifiedActivities, setNotifiedActivities] = useState<Set<string>>(new Set());
 
   useEffect(() => {

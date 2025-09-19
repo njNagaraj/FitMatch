@@ -1,6 +1,7 @@
 import React from 'react';
 import { Page, User } from '../types';
 import { ICONS, APP_NAME, APP_TAGLINE } from '../constants';
+import { useAppContext } from '../contexts/AppContext';
 
 interface SidebarProps {
   currentPage: Page;
@@ -9,9 +10,6 @@ interface SidebarProps {
   toggleTheme: () => void;
   isSidebarOpen: boolean;
   setSidebarOpen: (isOpen: boolean) => void;
-  logout: () => void;
-  isAdmin: boolean;
-  currentUser?: User | null;
   locationPreference: 'current' | 'home';
   setLocationPreference: (preference: 'current' | 'home') => void;
 }
@@ -36,8 +34,9 @@ const NavItem: React.FC<{
   </button>
 );
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, theme, toggleTheme, isSidebarOpen, setSidebarOpen, logout, isAdmin, currentUser, locationPreference, setLocationPreference }) => {
-  
+export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, theme, toggleTheme, isSidebarOpen, setSidebarOpen, locationPreference, setLocationPreference }) => {
+  const { logout, isAdmin, currentUser } = useAppContext();
+
   const handlePageChange = (page: Page) => {
     setCurrentPage(page);
     setSidebarOpen(false); // Close sidebar on navigation

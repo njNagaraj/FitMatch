@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FitMatchData } from '../useFitMatchData';
 import { Chat, Message } from '../types';
+import { useAppContext } from '../contexts/AppContext';
 
-const ChatView: React.FC<{ chat: Chat; data: FitMatchData; onBack: () => void; }> = ({ chat, data, onBack }) => {
-    const { getActivityById, getUserById, sendMessage, currentUser } = data;
+const ChatView: React.FC<{ chat: Chat; onBack: () => void; }> = ({ chat, onBack }) => {
+    const { getActivityById, getUserById, sendMessage, currentUser } = useAppContext();
     const activity = getActivityById(chat.activityId);
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -14,7 +14,7 @@ const ChatView: React.FC<{ chat: Chat; data: FitMatchData; onBack: () => void; }
 
     useEffect(scrollToBottom, [chat.messages]);
 
-    if (!activity) return <div>Activity not found</div>;
+    if (!activity || !currentUser) return <div>Activity not found</div>;
 
     const handleSend = (e: React.FormEvent) => {
         e.preventDefault();
@@ -30,12 +30,21 @@ const ChatView: React.FC<{ chat: Chat; data: FitMatchData; onBack: () => void; }
             </header>
             <div className="flex-1 p-4 overflow-y-auto">
                 {chat.messages.map(message => {
+                    if (message.senderId === 'system') {
+                        return (
+                            <div key={message.id} className="my-3 text-center">
+                                <span className="text-xs text-light-text-secondary dark:text-dark-text-secondary italic bg-light-bg dark:bg-dark-bg px-3 py-1 rounded-full">
+                                    {message.text}
+                                </span>
+                            </div>
+                        );
+                    }
                     const sender = getUserById(message.senderId);
                     const isCurrentUser = message.senderId === currentUser.id;
                     return (
                         <div key={message.id} className={`flex items-end gap-2 my-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
                             {!isCurrentUser && <img src={sender?.avatarUrl} alt={sender?.name} className="w-8 h-8 rounded-full"/>}
-                            <div className={`max-w-xs lg:max-w-md px-4 py-2 ${isCurrentUser ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                            <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isCurrentUser ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-700'}`}>
                                 {!isCurrentUser && <p className="text-xs font-bold mb-1">{sender?.name}</p>}
                                 <p>{message.text}</p>
                                 <p className={`text-xs mt-1 opacity-70 ${isCurrentUser ? 'text-right' : 'text-left'}`}>{new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
@@ -55,8 +64,8 @@ const ChatView: React.FC<{ chat: Chat; data: FitMatchData; onBack: () => void; }
     )
 }
 
-export const Chats: React.FC<{ data: FitMatchData }> = ({ data }) => {
-  const { chats, myActivities, getActivityById, getUserById } = data;
+export const Chats: React.FC = () => {
+  const { chats, myActivities, getActivityById, getUserById, currentUser } = useAppContext();
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   
   const userChatIds = new Set(myActivities.map(a => a.id));
@@ -79,7 +88,14 @@ export const Chats: React.FC<{ data: FitMatchData }> = ({ data }) => {
                 return (
                     <button key={chat.id} onClick={() => setSelectedChatId(chat.id)} className={`w-full text-left p-4 border-b border-light-border dark:border-dark-border hover:bg-primary-light dark:hover:bg-dark-bg-secondary ${selectedChatId === chat.id ? 'bg-primary-light dark:bg-dark-bg-secondary' : ''}`}>
                         <p className="font-bold">{activity.title}</p>
-                        {lastMessage && <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary truncate">{sender?.name}: {lastMessage.text}</p>}
+                        {lastMessage && (
+                            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary truncate">
+                                {lastMessage.senderId === 'system' 
+                                    ? <i className="opacity-80">{lastMessage.text}</i>
+                                    : `${sender?.id === currentUser?.id ? 'You' : sender?.name}: ${lastMessage.text}`
+                                }
+                            </p>
+                        )}
                     </button>
                 )
             }) : (
@@ -91,7 +107,7 @@ export const Chats: React.FC<{ data: FitMatchData }> = ({ data }) => {
         </div>
         <div className={`flex-1 ${!selectedChatId ? 'hidden lg:flex' : 'flex'} items-center justify-center`}>
             {selectedChat ? (
-                <ChatView chat={selectedChat} data={data} onBack={() => setSelectedChatId(null)}/>
+                <ChatView chat={selectedChat} onBack={() => setSelectedChatId(null)}/>
             ) : (
                 <div className="text-center text-light-text-secondary dark:text-dark-text-secondary">
                     <p>Select a chat to start messaging.</p>

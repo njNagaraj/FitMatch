@@ -1,11 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { FitMatchData } from '../useFitMatchData';
 import { ICONS } from '../constants';
 import { ActivityCard } from './ActivityCard';
 import { Activity } from '../types';
+import { useAppContext } from '../contexts/AppContext';
 
 interface DashboardProps {
-  data: FitMatchData;
   setCurrentPage: (page: React.SetStateAction<any>) => void;
 }
 
@@ -23,8 +22,8 @@ const StatCard: React.FC<{ title: string; value: number; icon: React.ReactNode; 
   </div>
 );
 
-export const Dashboard: React.FC<DashboardProps> = ({ data, setCurrentPage }) => {
-  const { currentUser, nearbyActivities, sports, myActivities } = data;
+export const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage }) => {
+  const { currentUser, nearbyActivities, sports, myActivities, getSportById } = useAppContext();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [sportFilter, setSportFilter] = useState('All Sports');
@@ -32,13 +31,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, setCurrentPage }) =>
 
   const filteredActivities = useMemo(() => {
     return nearbyActivities.filter(activity => {
-        const sport = data.getSportById(activity.sportId);
+        const sport = getSportById(activity.sportId);
         const searchMatch = activity.title.toLowerCase().includes(searchTerm.toLowerCase()) || sport?.name.toLowerCase().includes(searchTerm.toLowerCase());
         const sportMatch = sportFilter === 'All Sports' || sport?.name === sportFilter;
         const levelMatch = levelFilter === 'All Levels' || activity.level === levelFilter;
         return searchMatch && sportMatch && levelMatch;
     });
-  }, [searchTerm, sportFilter, levelFilter, nearbyActivities, data]);
+  }, [searchTerm, sportFilter, levelFilter, nearbyActivities, getSportById]);
 
   if (!currentUser) {
     return <div>Loading...</div>;
@@ -111,7 +110,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, setCurrentPage }) =>
         {filteredActivities.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredActivities.map(activity => (
-              <ActivityCard key={activity.id} activity={activity} data={data} />
+              <ActivityCard key={activity.id} activity={activity} />
             ))}
           </div>
         ) : (

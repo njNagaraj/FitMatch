@@ -1,10 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { FitMatchData } from '../useFitMatchData';
 import { Page, Sport } from '../types';
 import { MapPicker } from './MapPicker';
+import { useAppContext } from '../contexts/AppContext';
 
 interface CreateActivityProps {
-  data: FitMatchData;
   setCurrentPage: (page: Page) => void;
 }
 
@@ -16,8 +15,8 @@ const FormRow: React.FC<{ label: string; children: React.ReactNode; error?: stri
   </div>
 );
 
-export const CreateActivity: React.FC<CreateActivityProps> = ({ data, setCurrentPage }) => {
-  const { sports, createActivity, currentUser } = data;
+export const CreateActivity: React.FC<CreateActivityProps> = ({ setCurrentPage }) => {
+  const { sports, createActivity, currentUser } = useAppContext();
   
   const [title, setTitle] = useState('');
   const [sportId, setSportId] = useState<string>(sports[0]?.id || '');

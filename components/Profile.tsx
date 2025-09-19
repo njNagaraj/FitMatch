@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FitMatchData } from '../useFitMatchData';
 import { User } from '../types';
 import { MapPicker } from './MapPicker';
+import { useAppContext } from '../contexts/AppContext';
 
 const StatBox: React.FC<{ label: string; value: number | string }> = ({ label, value }) => (
     <div className="bg-light-bg dark:bg-dark-bg p-4 text-center border border-light-border dark:border-dark-border">
@@ -18,8 +18,8 @@ const FormRow: React.FC<{ label: string; children: React.ReactNode; }> = ({ labe
 );
 
 
-export const Profile: React.FC<{ data: FitMatchData }> = ({ data }) => {
-    const { currentUser, myActivities, updateUserProfile, addToast } = data;
+export const Profile: React.FC = () => {
+    const { currentUser, myActivities, updateUserProfile, addToast } = useAppContext();
     const [isEditing, setIsEditing] = useState(false);
     
     // Form state

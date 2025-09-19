@@ -1,12 +1,11 @@
 
 import React from 'react';
 import { Activity } from '../types';
-import { FitMatchData } from '../useFitMatchData';
+import { useAppContext } from '../contexts/AppContext';
 
 // FIX: Define the missing ActivityCardProps interface
 interface ActivityCardProps {
   activity: Activity;
-  data: FitMatchData;
 }
 
 const getLevelColor = (level: string) => {
@@ -18,12 +17,14 @@ const getLevelColor = (level: string) => {
   }
 };
 
-export const ActivityCard: React.FC<ActivityCardProps> = ({ activity, data }) => {
-  const { getSportById, getUserById, joinActivity, currentUser } = data;
+export const ActivityCard: React.FC<ActivityCardProps> = ({ activity }) => {
+  const { getSportById, getUserById, joinActivity, currentUser } = useAppContext();
   const sport = getSportById(activity.sportId);
   const creator = getUserById(activity.creatorId);
 
   const sportName = activity.otherSportName || sport?.name;
+
+  if (!currentUser) return null;
 
   const canJoin = activity.participants.length < activity.partnersNeeded || activity.partnersNeeded === 0;
   const isJoined = activity.participants.includes(currentUser.id);

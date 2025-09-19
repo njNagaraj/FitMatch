@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { FitMatchData } from '../useFitMatchData';
 import { Event } from '../types';
+import { useAppContext } from '../contexts/AppContext';
 
 const EventCard: React.FC<{ event: Event }> = ({ event }) => (
   <div className="bg-light-bg-secondary dark:bg-dark-bg-secondary border border-light-border dark:border-dark-border overflow-hidden flex flex-col">
@@ -19,8 +19,8 @@ const EventCard: React.FC<{ event: Event }> = ({ event }) => (
   </div>
 );
 
-export const Events: React.FC<{ data: FitMatchData }> = ({ data }) => {
-  const { events } = data;
+export const Events: React.FC = () => {
+  const { events } = useAppContext();
   const [cityFilter, setCityFilter] = useState('All Cities');
 
   const cities = useMemo(() => ['All Cities', ...Array.from(new Set(events.map(e => e.city)))], [events]);

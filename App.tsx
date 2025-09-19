@@ -7,15 +7,25 @@ import { MyActivities } from './components/MyActivities';
 import { Events } from './components/Events';
 import { Chats } from './components/Chats';
 import { Profile } from './components/Profile';
-import { useFitMatchData } from './useFitMatchData';
 import { NotificationHandler } from './components/NotificationHandler';
 import { ICONS } from './constants';
 import { Login } from './components/Login';
 import { Signup } from './components/Signup';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ToastContainer } from './components/Toast';
+import { AppProvider, useAppContext } from './contexts/AppContext';
 
+// The main App component is now just the provider
 const App = () => {
+    return (
+        <AppProvider>
+            <AppContent />
+        </AppProvider>
+    );
+};
+
+// This new component contains the logic that was in App
+const AppContent = () => {
   const [currentPage, setCurrentPage] = useState<Page>(Page.Home);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [authPage, setAuthPage] = useState<'login' | 'signup'>('login');
@@ -29,8 +39,17 @@ const App = () => {
     return 'light';
   });
 
-  const appData = useFitMatchData();
-  const { currentUser, locationPreference, setLocationPreference } = appData;
+  // Get everything from the context
+  const { 
+    isAuthenticated, 
+    loading, 
+    currentUser, 
+    isAdmin, 
+    locationPreference, 
+    setLocationPreference, 
+    toasts, 
+    removeToast 
+  } = useAppContext();
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -43,33 +62,16 @@ const App = () => {
     }
   }, [theme]);
   
-  // When user logs in or out, set the correct default page and get location
+  // When user logs in or out, set the correct default page
   useEffect(() => {
-    if (appData.isAuthenticated) {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    appData.updateCurrentUserLocation({ lat: latitude, lon: longitude });
-                },
-                (error) => {
-                    console.error("Geolocation error:", error);
-                    appData.addToast("Could not get location. Using last known.", "error");
-                }
-            );
-        } else {
-            appData.addToast("Geolocation is not supported by this browser.", "error");
-        }
-
-        if (appData.isAdmin) {
+    if (isAuthenticated) {
+        if (isAdmin) {
             setCurrentPage(Page.AdminDashboard);
         } else {
             setCurrentPage(Page.Home);
         }
-    } else {
-        setCurrentPage(Page.Home); // Reset for next login
     }
-  }, [appData.isAuthenticated, appData.isAdmin]);
+  }, [isAuthenticated, isAdmin]);
 
   const toggleTheme = () => {
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
@@ -78,31 +80,42 @@ const App = () => {
   const renderPage = () => {
     switch (currentPage) {
       case Page.AdminDashboard:
-        return appData.isAdmin ? <AdminDashboard data={appData} /> : <Dashboard data={appData} setCurrentPage={setCurrentPage} />;
+        return isAdmin ? <AdminDashboard /> : <Dashboard setCurrentPage={setCurrentPage} />;
       case Page.Home:
-        return <Dashboard data={appData} setCurrentPage={setCurrentPage} />;
+        return <Dashboard setCurrentPage={setCurrentPage} />;
       case Page.CreateActivity:
-        return <CreateActivity data={appData} setCurrentPage={setCurrentPage} />;
+        return <CreateActivity setCurrentPage={setCurrentPage} />;
       case Page.MyActivities:
-        return <MyActivities data={appData} />;
+        return <MyActivities />;
       case Page.Events:
-        return <Events data={appData} />;
+        return <Events />;
       case Page.Chats:
-        return <Chats data={appData} />;
+        return <Chats />;
       case Page.Profile:
-        return <Profile data={appData} />;
+        return <Profile />;
       default:
-        return <Dashboard data={appData} setCurrentPage={setCurrentPage} />;
+        return <Dashboard setCurrentPage={setCurrentPage} />;
     }
   };
+  
+  if (loading) {
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text">
+            <div className="flex items-center space-x-3">
+                {ICONS.logo}
+                <p className="text-xl font-semibold">Loading FitMatch...</p>
+            </div>
+        </div>
+    );
+  }
 
-  if (!appData.isAuthenticated) {
+  if (!isAuthenticated) {
     return (
         <div className="bg-light-bg dark:bg-dark-bg min-h-screen font-sans text-light-text dark:text-dark-text">
             {authPage === 'login' ? (
-                <Login data={appData} setAuthPage={setAuthPage} />
+                <Login setAuthPage={setAuthPage} />
             ) : (
-                <Signup data={appData} setAuthPage={setAuthPage} />
+                <Signup setAuthPage={setAuthPage} />
             )}
         </div>
     );
@@ -124,9 +137,6 @@ const App = () => {
         toggleTheme={toggleTheme}
         isSidebarOpen={isSidebarOpen}
         setSidebarOpen={setSidebarOpen}
-        logout={appData.logout}
-        isAdmin={appData.isAdmin}
-        currentUser={currentUser}
         locationPreference={locationPreference}
         setLocationPreference={setLocationPreference}
       />
@@ -142,8 +152,8 @@ const App = () => {
             {renderPage()}
           </main>
       </div>
-      <ToastContainer toasts={appData.toasts} removeToast={appData.removeToast} />
-      <NotificationHandler data={appData} />
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
+      <NotificationHandler />
     </div>
   );
 };

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { FitMatchData } from '../useFitMatchData';
 import { ICONS, APP_NAME, APP_TAGLINE } from '../constants';
+import { useAppContext } from '../contexts/AppContext';
 
 interface SignupProps {
-    data: FitMatchData;
     setAuthPage: (page: 'login' | 'signup') => void;
 }
 
-export const Signup: React.FC<SignupProps> = ({ data, setAuthPage }) => {
+export const Signup: React.FC<SignupProps> = ({ setAuthPage }) => {
+    const { signup } = useAppContext();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -20,7 +20,7 @@ export const Signup: React.FC<SignupProps> = ({ data, setAuthPage }) => {
             return;
         }
         setError('');
-        data.signup(name, email, password);
+        signup(name, email, password);
     };
 
     return (

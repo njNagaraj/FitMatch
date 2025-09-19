@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { FitMatchData } from '../useFitMatchData';
 import { ICONS, APP_NAME, APP_TAGLINE } from '../constants';
+import { useAppContext } from '../contexts/AppContext';
 
 interface LoginProps {
-    data: FitMatchData;
     setAuthPage: (page: 'login' | 'signup') => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ data, setAuthPage }) => {
+export const Login: React.FC<LoginProps> = ({ setAuthPage }) => {
+    const { login } = useAppContext();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -15,7 +15,7 @@ export const Login: React.FC<LoginProps> = ({ data, setAuthPage }) => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        const success = data.login(email, password);
+        const success = login(email, password);
         if (!success) {
             setError('Invalid email or password. Please try again.');
         }

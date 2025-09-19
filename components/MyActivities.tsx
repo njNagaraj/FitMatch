@@ -1,10 +1,11 @@
 
-import React from 'react';
-import { FitMatchData } from '../useFitMatchData';
-import { Activity } from '../types';
 
-const MyActivityCard: React.FC<{ activity: Activity; data: FitMatchData; isCreator: boolean }> = ({ activity, data, isCreator }) => {
-  const { getSportById, getUserById, leaveActivity, deleteActivity } = data;
+import React from 'react';
+import { Activity } from '../types';
+import { useAppContext } from '../contexts/AppContext';
+
+const MyActivityCard: React.FC<{ activity: Activity; isCreator: boolean }> = ({ activity, isCreator }) => {
+  const { getSportById, getUserById, leaveActivity, deleteActivity } = useAppContext();
   const sport = getSportById(activity.sportId);
   const sportName = activity.otherSportName || sport?.name;
 
@@ -52,9 +53,11 @@ const MyActivityCard: React.FC<{ activity: Activity; data: FitMatchData; isCreat
 };
 
 
-export const MyActivities: React.FC<{ data: FitMatchData }> = ({ data }) => {
-  const { myActivities, currentUser } = data;
+export const MyActivities: React.FC = () => {
+  const { myActivities, currentUser } = useAppContext();
   
+  if (!currentUser) return null;
+
   const createdActivities = myActivities.filter(a => a.creatorId === currentUser.id);
   const joinedActivities = myActivities.filter(a => a.creatorId !== currentUser.id);
 
@@ -67,7 +70,7 @@ export const MyActivities: React.FC<{ data: FitMatchData }> = ({ data }) => {
         {createdActivities.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {createdActivities.map(activity => (
-              <MyActivityCard key={activity.id} activity={activity} data={data} isCreator={true} />
+              <MyActivityCard key={activity.id} activity={activity} isCreator={true} />
             ))}
           </div>
         ) : (
@@ -80,7 +83,7 @@ export const MyActivities: React.FC<{ data: FitMatchData }> = ({ data }) => {
          {joinedActivities.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {joinedActivities.map(activity => (
-              <MyActivityCard key={activity.id} activity={activity} data={data} isCreator={false} />
+              <MyActivityCard key={activity.id} activity={activity} isCreator={false} />
             ))}
           </div>
         ) : (

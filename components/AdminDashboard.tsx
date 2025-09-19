@@ -1,8 +1,9 @@
 
+
 import React from 'react';
-import { FitMatchData } from '../useFitMatchData';
 import { User, Activity } from '../types';
 import { ICONS } from '../constants';
+import { useAppContext } from '../contexts/AppContext';
 
 const AdminStatCard: React.FC<{ title: string; value: number; icon: React.ReactNode; }> = ({ title, value, icon }) => (
   <div className="bg-light-bg-secondary dark:bg-dark-bg-secondary p-4 border border-light-border dark:border-dark-border flex-1 min-w-[150px]">
@@ -16,8 +17,8 @@ const AdminStatCard: React.FC<{ title: string; value: number; icon: React.ReactN
   </div>
 );
 
-export const AdminDashboard: React.FC<{ data: FitMatchData }> = ({ data }) => {
-  const { users, activities, events, deleteUser, deleteActivity, currentUser, getUserById, addToast } = data;
+export const AdminDashboard: React.FC = () => {
+  const { users, activities, events, deleteUser, deleteActivity, currentUser, getUserById, addToast } = useAppContext();
   
   const handleDeleteUser = (userId: string) => {
     if(userId === currentUser?.id) {
