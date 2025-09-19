@@ -14,6 +14,7 @@ import { ICONS } from './constants';
 import { Login } from './components/Login';
 import { Signup } from './components/Signup';
 import { AdminDashboard } from './components/AdminDashboard';
+import { ToastContainer } from './components/Toast';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState<Page>(Page.Home);
@@ -123,6 +124,7 @@ const App = () => {
             {renderPage()}
           </main>
       </div>
+      <ToastContainer toasts={appData.toasts} removeToast={appData.removeToast} />
       <NotificationHandler data={appData} />
     </div>
   );

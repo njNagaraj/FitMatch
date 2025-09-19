@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Activity } from '../types';
 import { FitMatchData } from '../useFitMatchData';
@@ -22,6 +23,8 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({ activity, data }) =>
   const sport = getSportById(activity.sportId);
   const creator = getUserById(activity.creatorId);
 
+  const sportName = activity.otherSportName || sport?.name;
+
   const canJoin = activity.participants.length < activity.partnersNeeded || activity.partnersNeeded === 0;
   const isJoined = activity.participants.includes(currentUser.id);
 
@@ -40,7 +43,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({ activity, data }) =>
         </span>
       </div>
       <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-3">
-        {sport?.name} - {activity.activityType}
+        {sportName} - {activity.activityType}
       </p>
       <div className="flex items-center text-sm text-light-text-secondary dark:text-dark-text-secondary mb-4">
         Created by: <img src={creator?.avatarUrl} alt={creator?.name} className="w-6 h-6 rounded-full mx-2" /> {creator?.name}

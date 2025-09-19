@@ -29,6 +29,7 @@ export interface Sport {
 export interface Activity {
   id: string;
   sportId: string;
+  otherSportName?: string;
   title: string;
   creatorId: string;
   dateTime: Date;
@@ -62,4 +63,10 @@ export interface Chat {
   id: string; // Same as activityId
   activityId: string;
   messages: Message[];
+}
+
+export interface Toast {
+  id: number;
+  message: string;
+  type: 'success' | 'error' | 'info';
 }

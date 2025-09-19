@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FitMatchData } from '../useFitMatchData';
 import { Activity } from '../types';
@@ -5,6 +6,7 @@ import { Activity } from '../types';
 const MyActivityCard: React.FC<{ activity: Activity; data: FitMatchData; isCreator: boolean }> = ({ activity, data, isCreator }) => {
   const { getSportById, getUserById, leaveActivity, deleteActivity } = data;
   const sport = getSportById(activity.sportId);
+  const sportName = activity.otherSportName || sport?.name;
 
   const handleLeave = () => {
     if (window.confirm('Are you sure you want to leave this activity?')) {
@@ -22,7 +24,7 @@ const MyActivityCard: React.FC<{ activity: Activity; data: FitMatchData; isCreat
     <div className="bg-light-bg-secondary dark:bg-dark-bg-secondary p-4 border border-light-border dark:border-dark-border flex flex-col justify-between">
       <div>
         <h3 className="font-bold text-lg text-light-text dark:text-dark-text">{activity.title}</h3>
-        <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-1">{sport?.name} - {activity.level}</p>
+        <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-1">{sportName} - {activity.level}</p>
         <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-3">
           {new Date(activity.dateTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
         </p>

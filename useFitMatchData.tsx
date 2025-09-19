@@ -1,6 +1,6 @@
 
 import { useState, useMemo } from 'react';
-import { Activity, User, Sport, Event, Chat, Message } from './types';
+import { Activity, User, Sport, Event, Chat, Message, Toast } from './types';
 import { MOCK_ACTIVITIES, MOCK_USERS, MOCK_SPORTS, MOCK_EVENTS, MOCK_CHATS } from './data';
 import { VIEW_RADIUS_KM } from './constants';
 
@@ -35,6 +35,7 @@ export const useFitMatchData = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
   const currentUser = useMemo(() => users.find(u => u.id === currentUserId), [users, currentUserId]);
 
@@ -51,10 +52,22 @@ export const useFitMatchData = () => {
       return activities.filter(a => a.creatorId === currentUser.id || a.participants.includes(currentUser.id)).sort((a,b) => b.dateTime.getTime() - a.dateTime.getTime());
   }, [activities, currentUser]);
   
+  const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => removeToast(id), 5000); // Auto-dismiss after 5 seconds
+  };
+
+  const removeToast = (id: number) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
+  
   const joinActivity = (activityId: string) => {
     if (!currentUser) return;
+    let activityTitle = '';
     setActivities(prev => prev.map(activity => {
       if (activity.id === activityId && !activity.participants.includes(currentUser.id)) {
+        activityTitle = activity.title;
         const newParticipants = [...activity.participants, currentUser.id];
         
         if (newParticipants.length >= 2 && !chats.some(c => c.activityId === activityId)) {
@@ -63,7 +76,7 @@ export const useFitMatchData = () => {
                 activityId: activityId,
                 messages: [{
                     id: `msg-${Date.now()}`,
-                    senderId: currentUser.id,
+                    senderId: 'system', // Or current user
                     text: `${currentUser.name} has joined the activity!`,
                     timestamp: new Date(),
                 }]
@@ -75,16 +88,23 @@ export const useFitMatchData = () => {
       }
       return activity;
     }));
+    if (activityTitle) {
+      addToast(`Successfully joined "${activityTitle}"!`, 'success');
+    }
   };
 
   const leaveActivity = (activityId: string) => {
       if (!currentUser) return;
-      setActivities(prev => prev.map(activity => {
-          if (activity.id === activityId) {
-              return { ...activity, participants: activity.participants.filter(pId => pId !== currentUser.id) };
-          }
-          return activity;
-      }));
+      const activity = activities.find(a => a.id === activityId);
+      if(activity) {
+        setActivities(prev => prev.map(activity => {
+            if (activity.id === activityId) {
+                return { ...activity, participants: activity.participants.filter(pId => pId !== currentUser.id) };
+            }
+            return activity;
+        }));
+        addToast(`You have left "${activity.title}".`, 'info');
+      }
   };
   
   const createActivity = (newActivity: Omit<Activity, 'id' | 'creatorId' | 'participants'>) => {
@@ -96,14 +116,22 @@ export const useFitMatchData = () => {
           participants: [currentUser.id],
       };
       setActivities(prev => [activity, ...prev]);
+      addToast('Activity created successfully!', 'success');
   };
   
   const deleteActivity = (activityId: string) => {
-    setActivities(prev => prev.filter(activity => activity.id !== activityId));
-    setChats(prev => prev.filter(chat => chat.activityId !== activityId));
+    const activityToDelete = activities.find(a => a.id === activityId);
+    if(activityToDelete) {
+      setActivities(prev => prev.filter(activity => activity.id !== activityId));
+      setChats(prev => prev.filter(chat => chat.activityId !== activityId));
+      addToast(`Activity "${activityToDelete.title}" deleted.`, 'info');
+    }
   };
 
   const deleteUser = (userId: string) => {
+    const userToDelete = users.find(u => u.id === userId);
+    if (!userToDelete) return;
+
     // 1. Remove activities created by the user
     const activitiesToDelete = activities.filter(a => a.creatorId === userId).map(a => a.id);
     setActivities(prev => prev.filter(a => a.creatorId !== userId));
@@ -117,6 +145,7 @@ export const useFitMatchData = () => {
 
     // 3. Remove the user
     setUsers(prev => prev.filter(u => u.id !== userId));
+    addToast(`User "${userToDelete.name}" has been deleted.`, 'info');
   };
 
   const sendMessage = (activityId: string, text: string) => {
@@ -204,6 +233,9 @@ export const useFitMatchData = () => {
     login,
     signup,
     logout,
+    toasts,
+    addToast,
+    removeToast,
   };
 };
 

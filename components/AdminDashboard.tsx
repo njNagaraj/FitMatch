@@ -17,11 +17,11 @@ const AdminStatCard: React.FC<{ title: string; value: number; icon: React.ReactN
 );
 
 export const AdminDashboard: React.FC<{ data: FitMatchData }> = ({ data }) => {
-  const { users, activities, events, deleteUser, deleteActivity, currentUser, getUserById } = data;
+  const { users, activities, events, deleteUser, deleteActivity, currentUser, getUserById, addToast } = data;
   
   const handleDeleteUser = (userId: string) => {
     if(userId === currentUser?.id) {
-        alert("You cannot delete your own account.");
+        addToast("You cannot delete your own account.", 'error');
         return;
     }
     if (window.confirm('Are you sure you want to permanently delete this user and all their created activities?')) {
