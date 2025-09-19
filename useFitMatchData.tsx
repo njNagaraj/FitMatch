@@ -73,44 +73,33 @@ export const useFitMatchData = () => {
   
   const joinActivity = (activityId: string) => {
     if (!currentUser) return;
-    
-    const activity = activities.find(a => a.id === activityId);
-
-    // Check if activity exists and user is not already a participant
-    if (!activity || activity.participants.includes(currentUser.id)) {
-        return;
-    }
-
-    const newParticipants = [...activity.participants, currentUser.id];
-    const shouldCreateChat = newParticipants.length >= 2 && !chats.some(c => c.activityId === activityId);
-
-    // Update activities state
-    setActivities(prev =>
-        prev.map(act =>
-            act.id === activityId
-                ? { ...act, participants: newParticipants }
-                : act
-        )
-    );
-
-    // Update chats state if needed
-    if (shouldCreateChat) {
-        const newChat: Chat = {
-            id: activityId,
-            activityId: activityId,
-            messages: [
-                {
+    let activityTitle = '';
+    setActivities(prev => prev.map(activity => {
+      if (activity.id === activityId && !activity.participants.includes(currentUser.id)) {
+        activityTitle = activity.title;
+        const newParticipants = [...activity.participants, currentUser.id];
+        
+        if (newParticipants.length >= 2 && !chats.some(c => c.activityId === activityId)) {
+            const newChat: Chat = {
+                id: activityId,
+                activityId: activityId,
+                messages: [{
                     id: `msg-${Date.now()}`,
-                    senderId: 'system',
+                    senderId: 'system', // Or current user
                     text: `${currentUser.name} has joined the activity!`,
                     timestamp: new Date(),
-                },
-            ],
-        };
-        setChats(prevChats => [...prevChats, newChat]);
+                }]
+            };
+            setChats(prevChats => [...prevChats, newChat]);
+        }
+        
+        return { ...activity, participants: newParticipants };
+      }
+      return activity;
+    }));
+    if (activityTitle) {
+      addToast(`Successfully joined "${activityTitle}"!`, 'success');
     }
-
-    addToast(`Successfully joined "${activity.title}"!`, 'success');
   };
 
   const leaveActivity = (activityId: string) => {
