@@ -42,6 +42,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
         (payload) => {
+          // --- DEBUG LOG ---
+          // This log will appear in your browser's developer console when a new message is received.
+          // If you send a message and this log DOES NOT appear, it means:
+          // 1. You may have forgotten to enable "Realtime" for the 'messages' table in your Supabase dashboard (Database > Replication).
+          // 2. Your Row Level Security (RLS) policies for the 'messages' table are preventing the new message from being sent to you.
+          console.log('🎉 [FitMatch Realtime] New message received:', payload.new);
+
           const newMessage: Message = {
             id: payload.new.id,
             timestamp: new Date(payload.new.created_at),
@@ -60,7 +67,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   : chat
               );
             } else {
-              // New chat created by the first message
+              // New chat created by the first message (e.g., from a system message)
               const newChat: Chat = {
                 id: activityId,
                 activityId,
