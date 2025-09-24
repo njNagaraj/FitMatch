@@ -11,13 +11,19 @@ export const Login: React.FC<LoginProps> = ({ setAuthPage }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        const success = await login(email, password);
-        if (!success) {
-            setError('Invalid email or password. Please try again.');
+        setIsLoading(true);
+        try {
+            const success = await login(email, password);
+            if (!success) {
+                setError('Invalid email or password. Please try again.');
+            }
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -49,6 +55,7 @@ export const Login: React.FC<LoginProps> = ({ setAuthPage }) => {
                             onChange={e => setEmail(e.target.value)}
                             className="w-full p-3 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border focus:ring-primary focus:border-primary"
                             required
+                            disabled={isLoading}
                         />
                     </div>
                     <div>
@@ -59,14 +66,15 @@ export const Login: React.FC<LoginProps> = ({ setAuthPage }) => {
                             onChange={e => setPassword(e.target.value)}
                             className="w-full p-3 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border focus:ring-primary focus:border-primary"
                             required
+                            disabled={isLoading}
                         />
                     </div>
-                    <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white font-semibold px-4 py-3 transition-colors">
-                        Login
+                    <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white font-semibold px-4 py-3 transition-colors disabled:bg-gray-400" disabled={isLoading}>
+                        {isLoading ? 'Logging in...' : 'Login'}
                     </button>
                     <p className="text-center text-sm">
                         Don't have an account?{' '}
-                        <button type="button" onClick={() => setAuthPage('signup')} className="font-semibold text-primary hover:underline">
+                        <button type="button" onClick={() => setAuthPage('signup')} className="font-semibold text-primary hover:underline" disabled={isLoading}>
                             Sign up
                         </button>
                     </p>

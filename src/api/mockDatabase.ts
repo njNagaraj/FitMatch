@@ -14,46 +14,40 @@ let users: User[] = [
     id: 'admin-user', 
     name: 'Admin', 
     email: 'admin@fitmatch.com', 
-    avatarUrl: 'https://i.pravatar.cc/150?u=admin-user', 
-    currentLocation: { lat: 12.9716, lon: 77.5946 }, // Bangalore
+    avatarUrl: 'https://www.w3schools.com/howto/img_avatar.png',
     isAdmin: true 
   },
   { 
     id: 'user-1', 
     name: 'Nagaraj (Chennai)', 
     email: 'nagaraj@fitmatch.com', 
-    avatarUrl: 'https://i.pravatar.cc/150?u=user-1', 
-    currentLocation: { lat: 13.0471, lon: 80.1873 }, // Chennai
+    avatarUrl: 'https://www.w3schools.com/howto/img_avatar.png', 
     homeLocation: { lat: 13.0471, lon: 80.1873, name: 'Home in Chennai' }
   },
   { 
     id: 'user-2', 
     name: 'Priya (Chennai)', 
     email: 'priya@fitmatch.com', 
-    avatarUrl: 'https://i.pravatar.cc/150?u=user-2', 
-    currentLocation: { lat: 13.0480, lon: 80.1890 } // Chennai
+    avatarUrl: 'https://www.w3schools.com/howto/img_avatar2.png',
   },
   { 
     id: 'user-4',
     name: 'Sam (Bangalore)', 
     email: 'sam@fitmatch.com', 
-    avatarUrl: 'https://i.pravatar.cc/150?u=user-4', 
-    currentLocation: { lat: 12.9780, lon: 77.6000 }   // Bangalore
+    avatarUrl: 'https://www.w3schools.com/howto/img_avatar.png',
   },
   { 
     id: 'user-3', 
     name: 'Maria', 
     email: 'maria@test.com', 
-    avatarUrl: 'https://i.pravatar.cc/150?u=user-3', 
-    currentLocation: { lat: 12.9700, lon: 77.5920 }, // Bangalore
+    avatarUrl: 'https://www.w3schools.com/howto/img_avatar2.png', 
     homeLocation: { lat: 12.9716, lon: 77.5946, name: 'Central Bangalore' }
   },
   { 
     id: 'user-5', 
     name: 'Chloe', 
     email: 'chloe@test.com', 
-    avatarUrl: 'https://i.pravatar.cc/150?u=user-5', 
-    currentLocation: { lat: 13.0000, lon: 77.6100 } // Bangalore
+    avatarUrl: 'https://www.w3schools.com/howto/img_avatar2.png',
   },
 ];
 

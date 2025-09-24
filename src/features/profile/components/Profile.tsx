@@ -16,13 +16,16 @@ export const Profile: React.FC = () => {
     // Form state
     const [name, setName] = useState(currentUser?.name || '');
     const [homeLocation, setHomeLocation] = useState(currentUser?.homeLocation);
+    const [viewRadius, setViewRadius] = useState(currentUser?.viewRadius || 5);
     const [isMapOpen, setIsMapOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
 
     useEffect(() => {
         if (currentUser && !isEditing) {
             setName(currentUser.name);
             setHomeLocation(currentUser.homeLocation);
+            setViewRadius(currentUser.viewRadius || 5);
         }
     }, [currentUser, isEditing]);
 
@@ -34,19 +37,27 @@ export const Profile: React.FC = () => {
     const createdCount = myActivities.filter(a => a.creatorId === currentUser.id).length;
     const joinedCount = myActivities.filter(a => a.creatorId !== currentUser.id).length;
 
-    const handleSave = (e: React.FormEvent) => {
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        updateUserProfile({
-            name,
-            homeLocation,
-        });
-        setIsEditing(false);
+        if (isSaving) return;
+        setIsSaving(true);
+        try {
+            await updateUserProfile({
+                name,
+                homeLocation,
+                viewRadius,
+            });
+            setIsEditing(false);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleCancel = () => {
         // Reset form state to original
         setName(currentUser.name);
         setHomeLocation(currentUser.homeLocation);
+        setViewRadius(currentUser.viewRadius || 5);
         setIsEditing(false);
     }
 
@@ -77,19 +88,33 @@ export const Profile: React.FC = () => {
                                    <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-md focus:ring-primary focus:border-primary" />
                                </FormRow>
                                <FormRow label="Home Location">
-                                   <div className="p-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-md flex justify-between items-center">
-                                       <p className="text-sm text-light-text dark:text-dark-text truncate pr-4">
-                                           {homeLocation?.name || 'Not set'}
-                                       </p>
-                                       <button type="button" onClick={() => setIsMapOpen(true)} className="px-4 py-1 bg-primary text-white text-sm font-semibold whitespace-nowrap rounded-md">Set on Map</button>
+                                   <div className="p-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-md flex justify-between items-center gap-2">
+                                       <div className="flex-1 min-w-0">
+                                            <p className="text-sm text-light-text dark:text-dark-text truncate">
+                                                {homeLocation?.name || 'Not set'}
+                                            </p>
+                                       </div>
+                                       <button type="button" onClick={() => setIsMapOpen(true)} className="flex-shrink-0 px-4 py-1 bg-primary text-white text-sm font-semibold rounded-md">Set on Map</button>
                                    </div>
                                 </FormRow>
 
+                                <FormRow label={`Search Radius: ${viewRadius} km`}>
+                                   <input 
+                                     type="range" 
+                                     min="5" 
+                                     max="50" 
+                                     step="1" 
+                                     value={viewRadius} 
+                                     onChange={e => setViewRadius(Number(e.target.value))} 
+                                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-primary" 
+                                   />
+                                </FormRow>
+
                                <div className="flex gap-2 pt-2">
-                                   <button type="submit" className="flex-1 bg-primary hover:bg-primary-dark text-white font-semibold px-4 py-2 transition-colors rounded-md">
-                                        Save Changes
+                                   <button type="submit" className="flex-1 bg-primary hover:bg-primary-dark text-white font-semibold px-4 py-2 transition-colors rounded-md disabled:bg-gray-400" disabled={isSaving}>
+                                        {isSaving ? 'Saving...' : 'Save Changes'}
                                     </button>
-                                    <button type="button" onClick={handleCancel} className="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-light-text dark:text-dark-text font-semibold px-4 py-2 transition-colors rounded-md">
+                                    <button type="button" onClick={handleCancel} className="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-light-text dark:text-dark-text font-semibold px-4 py-2 transition-colors rounded-md" disabled={isSaving}>
                                         Cancel
                                     </button>
                                </div>
@@ -100,6 +125,9 @@ export const Profile: React.FC = () => {
                                 <p className="text-light-text-secondary dark:text-dark-text-secondary mt-1">{currentUser.email}</p>
                                 <div className="mt-4 text-sm bg-light-bg dark:bg-dark-bg inline-block p-2 border border-light-border dark:border-dark-border rounded-md">
                                     <span className="font-semibold">Home Location: </span> {currentUser.homeLocation?.name || 'Not Set'}
+                                </div>
+                                <div className="mt-2 text-sm bg-light-bg dark:bg-dark-bg inline-block p-2 border border-light-border dark:border-dark-border rounded-md ml-2">
+                                    <span className="font-semibold">Search Radius: </span> {currentUser.viewRadius || 5} km
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 my-6">
                                     <StatBox label="Activities Created" value={createdCount} />

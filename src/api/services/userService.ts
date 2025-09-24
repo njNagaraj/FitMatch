@@ -1,71 +1,64 @@
-import { db } from '../mockDatabase';
+import { supabase } from '../supabaseClient';
 import { User } from '../../shared/types';
-
-const SIMULATED_DELAY = 500;
 
 export const userService = {
   getUsers: async (): Promise<User[]> => {
-    console.log('API: Fetching all users...');
-    return new Promise(resolve => setTimeout(() => resolve([...db.users]), SIMULATED_DELAY));
+    const { data, error } = await supabase.from('profiles').select('*');
+    if (error) throw error;
+    // Map snake_case from DB to camelCase in User type
+    return data.map(profile => ({
+      id: profile.id,
+      name: profile.name,
+      avatarUrl: profile.avatar_url,
+      isAdmin: profile.is_admin,
+      viewRadius: profile.view_radius,
+      homeLocation: profile.home_location
+    }));
   },
-
-  updateUserProfile: async (userId: string, updatedData: Partial<Pick<User, 'name' | 'homeLocation'>>): Promise<User> => {
-    console.log(`API: Updating profile for user ${userId}...`);
-    let updatedUser: User | undefined;
-    db.users = db.users.map(user => {
-      if (user.id === userId) {
-        updatedUser = { ...user, ...updatedData };
-        return updatedUser;
-      }
-      return user;
-    });
-
-    if (updatedUser) {
-      return new Promise(resolve => setTimeout(() => resolve(updatedUser!), SIMULATED_DELAY));
-    } else {
-      return Promise.reject(new Error('User not found.'));
+  
+  getUserProfile: async (userId: string): Promise<Omit<User, 'id' | 'email' | 'currentLocation'> | null> => {
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    if (error) {
+        console.error("Error fetching profile:", error.message);
+        return null;
     }
+    return data ? {
+        name: data.name,
+        avatarUrl: data.avatar_url,
+        isAdmin: data.is_admin,
+        viewRadius: data.view_radius,
+        homeLocation: data.home_location
+    } : null;
   },
 
-  updateCurrentUserLocation: async (userId: string, coords: { lat: number; lon: number }): Promise<User> => {
-      console.log(`API: Updating current location for user ${userId}...`);
-      let updatedUser: User | undefined;
-      db.users = db.users.map(user => {
-          if (user.id === userId) {
-              updatedUser = { ...user, currentLocation: coords };
-              return updatedUser;
-          }
-          return user;
-      });
-      if (updatedUser) {
-        return new Promise(resolve => setTimeout(() => resolve(updatedUser!), 50)); // Quicker update
-      } else {
-        return Promise.reject(new Error('User not found.'));
-      }
+  updateUserProfile: async (userId: string, updatedData: Partial<Pick<User, 'name' | 'homeLocation' | 'viewRadius'>>) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+          name: updatedData.name,
+          home_location: updatedData.homeLocation,
+          view_radius: updatedData.viewRadius
+       })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return {
+        name: data.name,
+        avatarUrl: data.avatar_url,
+        isAdmin: data.is_admin,
+        viewRadius: data.view_radius,
+        homeLocation: data.home_location
+    };
   },
 
   deleteUser: async (userId: string): Promise<string> => {
-    console.log(`API: Deleting user ${userId}...`);
-    
-    // 1. Remove activities created by the user and their associated chats
-    const activitiesToDelete = db.activities.filter(a => a.creatorId === userId).map(a => a.id);
-    db.activities = db.activities.filter(a => a.creatorId !== userId);
-    db.chats = db.chats.filter(c => !activitiesToDelete.includes(c.activityId));
-
-    // 2. Remove user from participants list of other activities
-    db.activities = db.activities.map(activity => ({
-      ...activity,
-      participants: activity.participants.filter(pId => pId !== userId)
-    }));
-
-    // 3. Remove the user
-    const initialUserCount = db.users.length;
-    db.users = db.users.filter(u => u.id !== userId);
-    
-    if(db.users.length < initialUserCount) {
-        return new Promise(resolve => setTimeout(() => resolve(userId), SIMULATED_DELAY));
-    } else {
-        return Promise.reject(new Error('User not found'));
-    }
+    // Note: This only deletes the public profile. Deleting from auth.users
+    // requires admin privileges not available with the anon key.
+    // For a full user deletion, a Supabase Edge Function is recommended.
+    const { error } = await supabase.from('profiles').delete().eq('id', userId);
+    if (error) throw error;
+    return userId;
   },
 };

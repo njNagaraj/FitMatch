@@ -2,6 +2,7 @@ import React from 'react';
 import { Page } from '../types';
 import { ICONS, APP_NAME, APP_TAGLINE } from '../constants';
 import { useAuth } from '../../auth/contexts/AuthContext';
+import { useToast } from '../../shared/contexts/ToastContext';
 
 interface SidebarProps {
   currentPage: Page;
@@ -38,6 +39,7 @@ const NavItem: React.FC<{
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, theme, toggleTheme, isSidebarOpen, setSidebarOpen, locationPreference, setLocationPreference }) => {
   const { logout, isAdmin, currentUser } = useAuth();
+  const { addToast } = useToast();
 
   const handlePageChange = (page: Page) => {
     setCurrentPage(page);
@@ -64,6 +66,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, t
   ];
 
   const navLinks = isAdmin ? adminLinks : userLinks;
+  
+  const handleHomeLocationClick = () => {
+    if (currentUser?.homeLocation) {
+      setLocationPreference('home');
+    } else {
+      addToast("Set a home location in your profile first.", "info");
+      setCurrentPage(Page.Profile);
+      setSidebarOpen(false);
+    }
+  };
 
   return (
     <aside className={`w-64 h-screen bg-light-bg-secondary dark:bg-dark-bg-secondary p-4 flex flex-col flex-shrink-0 border-r border-light-border dark:border-dark-border
@@ -114,10 +126,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, t
                     Current
                 </button>
                 <button 
-                    onClick={() => { if (currentUser?.homeLocation) { setLocationPreference('home') } }}
-                    className={`flex-1 py-1 text-sm rounded-md transition-colors ${locationPreference === 'home' ? 'bg-primary text-white' : 'hover:bg-gray-200 dark:hover:bg-gray-700'} disabled:opacity-50 disabled:cursor-not-allowed`}
-                    disabled={!currentUser?.homeLocation}
-                    title={!currentUser?.homeLocation ? "Set a home location in your profile first" : ""}
+                    onClick={handleHomeLocationClick}
+                    className={`flex-1 py-1 text-sm rounded-md transition-colors ${locationPreference === 'home' ? 'bg-primary text-white' : 'hover:bg-gray-200 dark:hover:bg-gray-700'}`}
                 >
                     Home
                 </button>

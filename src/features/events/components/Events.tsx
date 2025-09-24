@@ -31,17 +31,17 @@ export const Events: React.FC = () => {
     setIsFormOpen(true);
   };
 
-  const handleDelete = (eventId: string) => {
+  const handleDelete = async (eventId: string) => {
     if (window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
-      deleteEvent(eventId);
+      await deleteEvent(eventId);
     }
   };
 
-  const handleSave = (eventData: Omit<Event, 'id'>) => {
+  const handleSave = async (eventData: Omit<Event, 'id'>) => {
     if (editingEvent) {
-      updateEvent(editingEvent.id, eventData);
+      await updateEvent(editingEvent.id, eventData);
     } else {
-      createEvent(eventData);
+      await createEvent(eventData);
     }
     setIsFormOpen(false);
     setEditingEvent(null);

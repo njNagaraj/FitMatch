@@ -1,80 +1,132 @@
-import { db } from '../mockDatabase';
-// FIX: Add `Sport` to imports to support the explicit return type on `getSports`.
+import { supabase } from '../supabaseClient';
 import { Activity, Sport } from '../../shared/types';
 
-const SIMULATED_DELAY = 500;
+type ActivityData = Omit<Activity, 'id' | 'creatorId' | 'participants'>;
+
+// Helper to transform Supabase activity data to application's Activity type
+const transformActivity = (activity: any): Activity => ({
+  id: activity.id,
+  sportId: activity.sport_id,
+  otherSportName: activity.other_sport_name,
+  title: activity.title,
+  creatorId: activity.creator_id,
+  dateTime: new Date(activity.date_time),
+  locationName: activity.location_name,
+  locationCoords: activity.location_coords,
+  activityType: activity.activity_type,
+  level: activity.level,
+  partnersNeeded: activity.partners_needed,
+  participants: activity.participants.map((p: any) => p.user_id),
+});
+
 
 export const activityService = {
   getActivities: async (): Promise<Activity[]> => {
-    console.log('API: Fetching all activities...');
-    return new Promise(resolve => setTimeout(() => resolve([...db.activities]), SIMULATED_DELAY));
+    const { data, error } = await supabase
+      .from('activities')
+      .select(`*, participants:activity_participants(user_id)`)
+      .order('date_time', { ascending: false });
+
+    if (error) throw error;
+    return data.map(transformActivity);
   },
 
-  createActivity: async (newActivityData: Omit<Activity, 'id' | 'creatorId' | 'participants'>, creatorId: string): Promise<Activity> => {
-    console.log('API: Creating activity...');
-    const newActivity: Activity = {
-      ...newActivityData,
-      id: `activity-${Date.now()}`,
-      creatorId: creatorId,
-      participants: [creatorId],
-    };
-    db.activities = [newActivity, ...db.activities];
-    return new Promise(resolve => setTimeout(() => resolve(newActivity), SIMULATED_DELAY));
-  },
+  createActivity: async (newActivityData: ActivityData, creatorId: string): Promise<Activity> => {
+    // 1. Insert the activity
+    const { data: activityData, error: activityError } = await supabase
+        .from('activities')
+        .insert({
+            sport_id: newActivityData.sportId || null,
+            other_sport_name: newActivityData.otherSportName,
+            title: newActivityData.title,
+            creator_id: creatorId,
+            date_time: newActivityData.dateTime.toISOString(),
+            location_name: newActivityData.locationName,
+            location_coords: newActivityData.locationCoords,
+            activity_type: newActivityData.activityType,
+            level: newActivityData.level,
+            partners_needed: newActivityData.partnersNeeded,
+        })
+        .select()
+        .single();
+    
+    if (activityError) throw activityError;
 
-  joinActivity: async (activityId: string, userId: string): Promise<Activity> => {
-    console.log(`API: User ${userId} joining activity ${activityId}...`);
-    let updatedActivity: Activity | undefined;
-    db.activities = db.activities.map(activity => {
-      if (activity.id === activityId && !activity.participants.includes(userId)) {
-        updatedActivity = { ...activity, participants: [...activity.participants, userId] };
-        return updatedActivity;
-      }
-      return activity;
-    });
-
-    if (updatedActivity) {
-      return new Promise(resolve => setTimeout(() => resolve(updatedActivity!), SIMULATED_DELAY));
-    } else {
-      return Promise.reject(new Error('Activity not found or user already joined.'));
+    // 2. Add creator to participants list
+    const { error: participantError } = await supabase
+        .from('activity_participants')
+        .insert({ activity_id: activityData.id, user_id: creatorId });
+    
+    if (participantError) {
+      // If adding participant fails, attempt to roll back activity creation for consistency
+      await supabase.from('activities').delete().eq('id', activityData.id);
+      throw participantError;
     }
+    
+    // Fetch the complete activity object to return
+    const { data: finalActivity, error: finalError } = await supabase
+      .from('activities')
+      .select(`*, participants:activity_participants(user_id)`)
+      .eq('id', activityData.id)
+      .single();
+
+    if (finalError) throw finalError;
+
+    return transformActivity(finalActivity);
   },
 
-  leaveActivity: async (activityId: string, userId: string): Promise<Activity> => {
-    console.log(`API: User ${userId} leaving activity ${activityId}...`);
-    let updatedActivity: Activity | undefined;
-    db.activities = db.activities.map(activity => {
-      if (activity.id === activityId) {
-        updatedActivity = { ...activity, participants: activity.participants.filter(pId => pId !== userId) };
-        return updatedActivity;
-      }
-      return activity;
-    });
+  updateActivity: async (activityId: string, updates: Partial<ActivityData>): Promise<Activity> => {
+    const { data, error } = await supabase
+      .from('activities')
+      .update({
+            sport_id: updates.sportId,
+            other_sport_name: updates.otherSportName,
+            title: updates.title,
+            date_time: updates.dateTime?.toISOString(),
+            location_name: updates.locationName,
+            location_coords: updates.locationCoords,
+            activity_type: updates.activityType,
+            level: updates.level,
+            partners_needed: updates.partnersNeeded,
+      })
+      .eq('id', activityId)
+      .select(`*, participants:activity_participants(user_id)`)
+      .single();
 
-    if (updatedActivity) {
-      return new Promise(resolve => setTimeout(() => resolve(updatedActivity!), SIMULATED_DELAY));
-    } else {
-      return Promise.reject(new Error('Activity not found.'));
-    }
+    if (error) throw error;
+    return transformActivity(data);
+  },
+
+  joinActivity: async (activityId: string, userId: string): Promise<void> => {
+    const { error } = await supabase
+      .from('activity_participants')
+      .insert({ activity_id: activityId, user_id: userId });
+    if (error) throw error;
+  },
+
+  leaveActivity: async (activityId: string, userId: string): Promise<void> => {
+    const { error } = await supabase
+      .from('activity_participants')
+      .delete()
+      .match({ activity_id: activityId, user_id: userId });
+    if (error) throw error;
   },
 
   deleteActivity: async (activityId: string): Promise<string> => {
-    console.log(`API: Deleting activity ${activityId}...`);
-    const initialLength = db.activities.length;
-    db.activities = db.activities.filter(activity => activity.id !== activityId);
-    // Also delete associated chats
-    db.chats = db.chats.filter(chat => chat.activityId !== activityId);
-    
-    if (db.activities.length < initialLength) {
-      return new Promise(resolve => setTimeout(() => resolve(activityId), SIMULATED_DELAY));
-    } else {
-      return Promise.reject(new Error('Activity not found.'));
-    }
+    const { error } = await supabase.from('activities').delete().eq('id', activityId);
+    if (error) throw error;
+    return activityId;
   },
   
-  // FIX: Add explicit return type `Promise<Sport[]>` to ensure correct type inference where this function is used.
   getSports: async (): Promise<Sport[]> => {
-    console.log('API: Fetching all sports...');
-    return new Promise(resolve => setTimeout(() => resolve([...db.sports]), SIMULATED_DELAY));
+    const { data, error } = await supabase.from('sports').select('*');
+    if (error) throw error;
+    return data.map(sport => ({
+        id: sport.id,
+        name: sport.name,
+        isTeamSport: sport.is_team_sport,
+        activityTypes: sport.activity_types,
+        levels: sport.levels
+    }));
   }
 };

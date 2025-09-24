@@ -16,17 +16,19 @@ const TourContext = createContext<TourContextType | undefined>(undefined);
 export const TourProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [tourStepIndex, setTourStepIndex] = useState(0);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, currentUser } = useAuth();
   
-  // Logic to automatically start tour for new users
+  // Logic to automatically start tour for new users on signup
   useEffect(() => {
-    if (isAuthenticated) {
-      const hasCompletedTour = localStorage.getItem('fitmatch_hasCompletedTour');
-      if (!hasCompletedTour) {
+    if (isAuthenticated && currentUser) {
+      const shouldStartTour = sessionStorage.getItem('start_tour') === 'true';
+      const hasCompletedTour = localStorage.getItem(`fitmatch_hasCompletedTour_${currentUser.id}`);
+      
+      if (shouldStartTour && !hasCompletedTour) {
         startTour();
       }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, currentUser]);
 
   const startTour = () => {
     setTourStepIndex(0);
@@ -35,7 +37,10 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const endTour = () => {
     setIsTourOpen(false);
-    localStorage.setItem('fitmatch_hasCompletedTour', 'true');
+    sessionStorage.removeItem('start_tour');
+    if (currentUser) {
+      localStorage.setItem(`fitmatch_hasCompletedTour_${currentUser.id}`, 'true');
+    }
   };
 
   const nextTourStep = () => {

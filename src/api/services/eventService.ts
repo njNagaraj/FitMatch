@@ -1,50 +1,67 @@
-import { db } from '../mockDatabase';
+import { supabase } from '../supabaseClient';
 import { Event } from '../../shared/types';
 
-const SIMULATED_DELAY = 500;
+type EventData = Omit<Event, 'id'>;
+
+const transformEvent = (event: any): Event => ({
+    id: event.id,
+    title: event.title,
+    sport: event.sport,
+    city: event.city,
+    date: new Date(event.date),
+    description: event.description,
+    imageUrl: event.image_url,
+    registrationUrl: event.registration_url,
+});
 
 export const eventService = {
   getEvents: async (): Promise<Event[]> => {
-    console.log('API: Fetching all events...');
-    return new Promise(resolve => setTimeout(() => resolve([...db.events].sort((a,b) => a.date.getTime() - b.date.getTime())), SIMULATED_DELAY));
+    const { data, error } = await supabase.from('events').select('*').order('date', { ascending: true });
+    if (error) throw error;
+    return data.map(transformEvent);
   },
 
-  createEvent: async (eventData: Omit<Event, 'id'>): Promise<Event> => {
-    console.log('API: Creating event...');
-    const newEvent: Event = {
-      ...eventData,
-      id: `event-${Date.now()}`,
-    };
-    db.events.push(newEvent);
-    return new Promise(resolve => setTimeout(() => resolve(newEvent), SIMULATED_DELAY));
+  createEvent: async (eventData: EventData): Promise<Event> => {
+    const { data, error } = await supabase
+      .from('events')
+      .insert({
+        title: eventData.title,
+        sport: eventData.sport,
+        city: eventData.city,
+        date: eventData.date.toISOString(),
+        description: eventData.description,
+        image_url: eventData.imageUrl,
+        registration_url: eventData.registrationUrl,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return transformEvent(data);
   },
 
-  updateEvent: async (eventId: string, updatedData: Omit<Event, 'id'>): Promise<Event> => {
-    console.log(`API: Updating event ${eventId}...`);
-    let updatedEvent: Event | undefined;
-    db.events = db.events.map(event => {
-      if (event.id === eventId) {
-        updatedEvent = { id: eventId, ...updatedData };
-        return updatedEvent;
-      }
-      return event;
-    });
-
-    if (updatedEvent) {
-      return new Promise(resolve => setTimeout(() => resolve(updatedEvent!), SIMULATED_DELAY));
-    } else {
-      return Promise.reject(new Error('Event not found.'));
-    }
+  updateEvent: async (eventId: string, updatedData: EventData): Promise<Event> => {
+    const { data, error } = await supabase
+      .from('events')
+      .update({
+        title: updatedData.title,
+        sport: updatedData.sport,
+        city: updatedData.city,
+        date: updatedData.date.toISOString(),
+        description: updatedData.description,
+        image_url: updatedData.imageUrl,
+        registration_url: updatedData.registrationUrl,
+      })
+      .eq('id', eventId)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    return transformEvent(data);
   },
 
   deleteEvent: async (eventId: string): Promise<string> => {
-    console.log(`API: Deleting event ${eventId}...`);
-    const initialLength = db.events.length;
-    db.events = db.events.filter(event => event.id !== eventId);
-    if (db.events.length < initialLength) {
-      return new Promise(resolve => setTimeout(() => resolve(eventId), SIMULATED_DELAY));
-    } else {
-      return Promise.reject(new Error('Event not found.'));
-    }
+    const { error } = await supabase.from('events').delete().eq('id', eventId);
+    if (error) throw error;
+    return eventId;
   },
 };

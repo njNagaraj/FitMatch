@@ -5,6 +5,7 @@ import { StatCard } from './StatCard';
 import { useAuth } from '../../../auth/contexts/AuthContext';
 import { useActivities } from '../../activities/contexts/ActivityContext';
 import { Sport } from '../../../shared/types';
+import { haversineDistance } from '../../../shared/utils/geolocation';
 
 interface DashboardProps {
   setCurrentPage: (page: React.SetStateAction<any>) => void;
@@ -12,7 +13,7 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage }) => {
   const { currentUser } = useAuth();
-  const { nearbyActivities, sports, myActivities, getSportById } = useActivities();
+  const { nearbyActivities, sports, myActivities, getSportById, locationPreference } = useActivities();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [sportFilter, setSportFilter] = useState('All Sports');
@@ -28,12 +29,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage }) => {
         return searchMatch && sportMatch && levelMatch;
     });
   }, [searchTerm, sportFilter, levelFilter, nearbyActivities, getSportById]);
+  
+  const isFiltered = searchTerm !== '' || sportFilter !== 'All Sports' || levelFilter !== 'All Levels';
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setSportFilter('All Sports');
+    setLevelFilter('All Levels');
+  };
 
   if (!currentUser) {
     return <div>Loading...</div>;
   }
   
   const greeting = `Good ${new Date().getHours() < 12 ? 'morning' : 'afternoon'}, ${currentUser.name.split(' ')[0]}!`;
+  const searchLocation = locationPreference === 'home' && currentUser.homeLocation 
+      ? currentUser.homeLocation 
+      : currentUser.currentLocation;
 
   return (
     <div className="p-4 sm:p-8 space-y-8 overflow-y-auto h-full">
@@ -89,8 +101,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage }) => {
             <option>Casual</option>
             <option>Competitive</option>
           </select>
-          <div className="text-right text-sm text-light-text-secondary dark:text-dark-text-secondary">
-            {filteredActivities.length} activities found
+          <div className="flex justify-end items-center gap-4 text-sm text-light-text-secondary dark:text-dark-text-secondary">
+            <span>{filteredActivities.length} activities found</span>
+            {isFiltered && (
+              <button onClick={handleClearFilters} className="font-semibold text-primary hover:underline">
+                Clear
+              </button>
+            )}
           </div>
         </div>
       </section>
@@ -99,9 +116,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage }) => {
       <section>
         {filteredActivities.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredActivities.map(activity => (
-              <ActivityCard key={activity.id} activity={activity} />
-            ))}
+            {filteredActivities.map(activity => {
+                const distance = searchLocation ? haversineDistance(searchLocation, activity.locationCoords) : undefined;
+                return <ActivityCard key={activity.id} activity={activity} distance={distance} />;
+            })}
           </div>
         ) : (
           <div className="text-center py-10">

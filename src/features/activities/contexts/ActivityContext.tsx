@@ -3,9 +3,10 @@ import { Activity, Sport } from '../../../shared/types';
 import { activityService } from '../../../api/services/activityService';
 import { useAuth } from '../../../auth/contexts/AuthContext';
 import { useToast } from '../../../shared/contexts/ToastContext';
-import { VIEW_RADIUS_KM } from '../../../shared/constants';
+import { DEFAULT_VIEW_RADIUS_KM } from '../../../shared/constants';
 import { haversineDistance } from '../../../shared/utils/geolocation';
-import { useChats } from '../../chats/contexts/ChatContext';
+
+type ActivityData = Omit<Activity, 'id' | 'creatorId' | 'participants'>;
 
 interface ActivityContextType {
   activities: Activity[];
@@ -17,7 +18,8 @@ interface ActivityContextType {
   setLocationPreference: (preference: 'current' | 'home') => void;
   getSportById: (id: string) => Sport | undefined;
   getActivityById: (id: string) => Activity | undefined;
-  createActivity: (newActivity: Omit<Activity, 'id' | 'creatorId' | 'participants'>) => Promise<boolean>;
+  createActivity: (newActivity: ActivityData) => Promise<boolean>;
+  updateActivity: (activityId: string, updatedData: Partial<ActivityData>) => Promise<boolean>;
   joinActivity: (activityId: string) => Promise<void>;
   leaveActivity: (activityId: string) => Promise<void>;
   deleteActivity: (activityId: string) => Promise<void>;
@@ -33,7 +35,6 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const { currentUser, isAuthenticated } = useAuth();
   const { addToast } = useToast();
-  const { createChatForActivity, addSystemMessageToChat } = useChats();
 
   const fetchData = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -45,9 +46,9 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ]);
       setActivities(fetchedActivities);
       setSports(fetchedSports);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch activity data:", error);
-      addToast("Could not load activities.", "error");
+      addToast(error.message, "error");
     } finally {
       setLoading(false);
     }
@@ -60,8 +61,8 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const myActivities = useMemo(() => {
     if (!currentUser) return [];
     return activities
-      .filter(a => a.creatorId === currentUser.id || a.participants.includes(currentUser.id))
-      .sort((a, b) => b.dateTime.getTime() - a.dateTime.getTime());
+      .filter(a => a.participants.includes(currentUser.id))
+      .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
   }, [activities, currentUser]);
 
   const nearbyActivities = useMemo(() => {
@@ -73,24 +74,38 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         
     if (!searchLocation) return [];
 
+    const radius = currentUser.viewRadius || DEFAULT_VIEW_RADIUS_KM;
+
     return activities.filter(activity => {
       const distance = haversineDistance(searchLocation, activity.locationCoords);
-      return distance <= VIEW_RADIUS_KM && !activity.participants.includes(currentUser.id);
+      return distance <= radius && !activity.participants.includes(currentUser.id);
     });
   }, [activities, currentUser, locationPreference]);
   
   const getSportById = (id: string) => sports.find(s => s.id === id);
   const getActivityById = (id: string) => activities.find(a => a.id === id);
 
-  const createActivity = async (newActivityData: Omit<Activity, 'id' | 'creatorId' | 'participants'>) => {
+  const createActivity = async (newActivityData: ActivityData) => {
     if (!currentUser) return false;
     try {
       const newActivity = await activityService.createActivity(newActivityData, currentUser.id);
       setActivities(prev => [newActivity, ...prev]);
       addToast('Activity created successfully!', 'success');
       return true;
-    } catch (error) {
-      addToast('Failed to create activity.', 'error');
+    } catch (error: any) {
+      addToast(error.message, 'error');
+      return false;
+    }
+  };
+  
+  const updateActivity = async (activityId: string, updatedData: Partial<ActivityData>) => {
+    try {
+      const updatedActivity = await activityService.updateActivity(activityId, updatedData);
+      setActivities(prev => prev.map(a => a.id === activityId ? updatedActivity : a));
+      addToast('Activity updated successfully!', 'success');
+      return true;
+    } catch (error: any) {
+      addToast(error.message, 'error');
       return false;
     }
   };
@@ -101,20 +116,17 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!activity) return;
 
     try {
-      const updatedActivity = await activityService.joinActivity(activityId, currentUser.id);
-      setActivities(prev => prev.map(a => a.id === activityId ? updatedActivity : a));
+      await activityService.joinActivity(activityId, currentUser.id);
+      // Optimistically update UI
+      setActivities(prev => prev.map(a => 
+          a.id === activityId 
+          ? { ...a, participants: [...a.participants, currentUser.id] } 
+          : a
+      ));
       addToast(`Successfully joined "${activity.title}"!`, 'success');
-      
-      // Handle chat creation/update
-      if (updatedActivity.participants.length >= 2) {
-          const message = `${currentUser.name} has joined the activity!`;
-          const chatExists = addSystemMessageToChat(activityId, message);
-          if(!chatExists) {
-              createChatForActivity(activityId, message);
-          }
-      }
-    } catch (error) {
-      addToast('Failed to join activity.', 'error');
+      // The database trigger will now handle creating the system message.
+    } catch (error: any) {
+      addToast(error.message, 'error');
     }
   };
 
@@ -125,14 +137,16 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     try {
       await activityService.leaveActivity(activityId, currentUser.id);
+      // Optimistically update UI
       setActivities(prev => prev.map(a => 
-        a.id === activityId 
-        ? { ...a, participants: a.participants.filter(pId => pId !== currentUser.id) }
-        : a
+          a.id === activityId 
+          ? { ...a, participants: a.participants.filter(pId => pId !== currentUser.id) } 
+          : a
       ));
       addToast(`You have left "${activity.title}".`, 'info');
-    } catch (error) {
-      addToast('Failed to leave activity.', 'error');
+       // The database trigger will now handle creating the system message.
+    } catch (error: any) {
+      addToast(error.message, 'error');
     }
   };
   
@@ -143,8 +157,8 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await activityService.deleteActivity(activityId);
       setActivities(prev => prev.filter(a => a.id !== activityId));
       addToast(`Activity "${activity.title}" deleted.`, 'info');
-    } catch (error) {
-      addToast('Failed to delete activity.', 'error');
+    } catch (error: any) {
+      addToast(error.message, 'error');
     }
   };
 
@@ -159,6 +173,7 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     getSportById,
     getActivityById,
     createActivity,
+    updateActivity,
     joinActivity,
     leaveActivity,
     deleteActivity,

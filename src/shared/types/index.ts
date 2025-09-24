@@ -12,10 +12,11 @@ export interface User {
   id: string;
   name: string;
   email?: string;
-  avatarUrl: string;
-  currentLocation: { lat: number; lon: number };
+  avatarUrl?: string;
+  currentLocation?: { lat: number; lon: number };
   homeLocation?: { lat: number; lon: number; name: string };
   isAdmin?: boolean;
+  viewRadius?: number;
 }
 
 export interface Sport {
@@ -37,7 +38,7 @@ export interface Activity {
   locationCoords: { lat: number; lon: number };
   activityType: string;
   level: string;
-  partnersNeeded: number; // 0 for unlimited
+  partnersNeeded: number; 
   participants: string[];
 }
 
@@ -54,9 +55,11 @@ export interface Event {
 
 export interface Message {
   id: string;
-  senderId: string;
+  senderId: string | null; // Null for system messages
   text: string;
   timestamp: Date;
+  isSystemMessage?: boolean;
+  status?: 'pending' | 'sent' | 'failed';
 }
 
 export interface Chat {

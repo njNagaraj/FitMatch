@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Page } from './shared/types';
+import { Page, Activity } from './shared/types';
 import { Sidebar } from './shared/components/Sidebar';
 import { Dashboard } from './features/dashboard/components/Dashboard';
 import { CreateActivity } from './features/activities/components/CreateActivity';
@@ -49,6 +49,7 @@ const AppContent = () => {
   const [currentPage, setCurrentPage] = useState<Page>(Page.Home);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [authPage, setAuthPage] = useState<'login' | 'signup'>('login');
+  const [activityToEdit, setActivityToEdit] = useState<Activity | null>(null);
   
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
@@ -90,6 +91,11 @@ const AppContent = () => {
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
   };
   
+  const handleEditActivity = (activity: Activity) => {
+    setActivityToEdit(activity);
+    setCurrentPage(Page.CreateActivity);
+  };
+  
   const renderPage = () => {
     switch (currentPage) {
       case Page.AdminDashboard:
@@ -97,9 +103,9 @@ const AppContent = () => {
       case Page.Home:
         return <Dashboard setCurrentPage={setCurrentPage} />;
       case Page.CreateActivity:
-        return <CreateActivity setCurrentPage={setCurrentPage} />;
+        return <CreateActivity setCurrentPage={setCurrentPage} activityToEdit={activityToEdit} setActivityToEdit={setActivityToEdit} />;
       case Page.MyActivities:
-        return <MyActivities />;
+        return <MyActivities onEditActivity={handleEditActivity} />;
       case Page.Events:
         return <Events />;
       case Page.Chats:

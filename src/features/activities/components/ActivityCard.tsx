@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Activity } from '../../../shared/types';
 import { useAuth } from '../../../auth/contexts/AuthContext';
 import { useActivities } from '../contexts/ActivityContext';
 import { useUsers } from '../../users/contexts/UserContext';
+import { ICONS } from '../../../shared/constants';
 
 interface ActivityCardProps {
   activity: Activity;
+  distance?: number;
 }
 
 const getLevelColor = (level: string) => {
@@ -17,10 +19,11 @@ const getLevelColor = (level: string) => {
   }
 };
 
-export const ActivityCard: React.FC<ActivityCardProps> = ({ activity }) => {
+export const ActivityCard: React.FC<ActivityCardProps> = ({ activity, distance }) => {
   const { currentUser } = useAuth();
   const { getSportById, joinActivity } = useActivities();
   const { getUserById } = useUsers();
+  const [isJoining, setIsJoining] = useState(false);
 
   const sport = getSportById(activity.sportId);
   const creator = getUserById(activity.creatorId);
@@ -33,9 +36,13 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({ activity }) => {
   const isJoined = activity.participants.includes(currentUser.id);
   const isCreator = activity.creatorId === currentUser.id;
 
-  const handleJoin = () => {
-    if (!isJoined && canJoin && !isCreator) {
-      joinActivity(activity.id);
+  const handleJoin = async () => {
+    if (isJoining || isJoined || !canJoin || isCreator) return;
+    setIsJoining(true);
+    try {
+      await joinActivity(activity.id);
+    } finally {
+      setIsJoining(false);
     }
   };
 
@@ -50,32 +57,32 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({ activity }) => {
       <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-3">
         {sportName} - {activity.activityType}
       </p>
-      <div className="flex items-center text-sm text-light-text-secondary dark:text-dark-text-secondary mb-4">
-        Created by: <img src={creator?.avatarUrl} alt={creator?.name} className="w-6 h-6 rounded-full mx-2" /> {creator?.name}
+      <div className="flex items-center text-sm text-light-text-secondary dark:text-dark-text-secondary mb-2">
+        Created by: <span className="font-medium text-light-text dark:text-dark-text ml-2">{creator?.name}</span>
       </div>
+      {distance !== undefined && (
+        <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary my-2 flex items-center gap-1.5">
+            <span className="inline-block w-4 h-4">{ICONS.mapPin}</span>
+            <span>{distance.toFixed(1)} km away - </span>
+            <a href={`https://www.google.com/maps/dir/?api=1&destination=${activity.locationCoords.lat},${activity.locationCoords.lon}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">View Map</a>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mt-auto pt-4 border-t border-light-border dark:border-dark-border">
         <div className="flex items-center">
-            {activity.participants.slice(0, 3).map(id => getUserById(id)).map(user => (
-                user ? <img key={user.id} src={user.avatarUrl} alt={user.name} className="w-8 h-8 rounded-full border-2 border-light-bg-secondary dark:border-dark-bg-secondary -mr-3" /> : null
-            ))}
-            {activity.participants.length > 3 && (
-                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold -mr-3 border-2 border-light-bg-secondary dark:border-dark-bg-secondary">
-                    +{activity.participants.length - 3}
-                </div>
-            )}
-             <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary ml-4">
+             <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
                 {activity.participants.length} / {activity.partnersNeeded === 0 ? '∞' : activity.partnersNeeded} joined
             </span>
         </div>
         <button 
           onClick={handleJoin}
-          disabled={isJoined || !canJoin || isCreator}
+          disabled={isJoined || !canJoin || isCreator || isJoining}
           className={`px-4 py-2 text-sm font-semibold text-white rounded-md transition-colors ${
             isJoined || isCreator ? 'bg-gray-400 cursor-not-allowed' : 
-            canJoin ? 'bg-primary hover:bg-primary-dark' : 'bg-red-400 cursor-not-allowed'
+            canJoin ? 'bg-primary hover:bg-primary-dark disabled:bg-gray-400' : 'bg-red-400 cursor-not-allowed'
           }`}
         >
-          {isJoined ? 'Joined' : isCreator ? 'Created' : 'Join'}
+          {isJoining ? 'Joining...' : isJoined ? 'Joined' : isCreator ? 'Created' : 'Join'}
         </button>
       </div>
     </div>

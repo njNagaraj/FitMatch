@@ -1,42 +1,50 @@
-import { db } from '../mockDatabase';
+import { supabase } from '../supabaseClient';
 import { Chat, Message } from '../../shared/types';
 
-const SIMULATED_DELAY = 300;
+const transformMessage = (msg: any): Message => ({
+    id: msg.id,
+    senderId: msg.sender_id,
+    text: msg.text,
+    timestamp: new Date(msg.created_at),
+    isSystemMessage: msg.is_system_message
+});
+
 
 export const chatService = {
   getChats: async (): Promise<Chat[]> => {
-    console.log('API: Fetching all chats...');
-    return new Promise(resolve => setTimeout(() => resolve([...db.chats]), SIMULATED_DELAY));
+    const { data: messages, error } = await supabase
+        .from('messages')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    const chatsMap = new Map<string, Chat>();
+
+    for (const message of messages) {
+        if (!chatsMap.has(message.activity_id)) {
+            chatsMap.set(message.activity_id, {
+                id: message.activity_id,
+                activityId: message.activity_id,
+                messages: [],
+            });
+        }
+        chatsMap.get(message.activity_id)!.messages.push(transformMessage(message));
+    }
+    return Array.from(chatsMap.values());
   },
+  
+  // Note: createChatForActivity is now handled implicitly by the database trigger
+  // which inserts a system message on join/leave events.
 
   sendMessage: async (activityId: string, text: string, senderId: string): Promise<Message> => {
-    console.log(`API: Sending message to chat for activity ${activityId}...`);
-    const newMessage: Message = {
-      id: `msg-${Date.now()}`,
-      senderId,
-      text,
-      timestamp: new Date(),
-    };
-
-    let chatExists = false;
-    db.chats = db.chats.map(chat => {
-      if (chat.activityId === activityId) {
-        chatExists = true;
-        return { ...chat, messages: [...chat.messages, newMessage] };
-      }
-      return chat;
-    });
-
-    // This case should ideally not happen as chats are created on join, but as a fallback:
-    if (!chatExists) {
-        const newChat: Chat = {
-            id: activityId,
-            activityId: activityId,
-            messages: [newMessage],
-        };
-        db.chats.push(newChat);
-    }
+    const { data, error } = await supabase.from('messages').insert({
+        activity_id: activityId,
+        text,
+        sender_id: senderId
+    }).select().single();
     
-    return new Promise(resolve => setTimeout(() => resolve(newMessage), SIMULATED_DELAY));
+    if (error) throw error;
+    return transformMessage(data);
   },
 };

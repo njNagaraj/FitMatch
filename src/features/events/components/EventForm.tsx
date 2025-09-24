@@ -5,7 +5,7 @@ import { FormRow } from '../../../shared/components/FormRow';
 interface EventFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (eventData: Omit<Event, 'id'>) => void;
+  onSave: (eventData: Omit<Event, 'id'>) => Promise<void>;
   eventToEdit: Event | null;
 }
 
@@ -26,6 +26,7 @@ export const EventForm: React.FC<EventFormProps> = ({ isOpen, onClose, onSave, e
   const [imageUrl, setImageUrl] = useState('');
   const [registrationUrl, setRegistrationUrl] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (eventToEdit) {
@@ -65,18 +66,24 @@ export const EventForm: React.FC<EventFormProps> = ({ isOpen, onClose, onSave, e
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
-    onSave({
-      title,
-      sport,
-      city,
-      date: new Date(date),
-      description,
-      imageUrl,
-      registrationUrl,
-    });
+    if (isSaving || !validate()) return;
+    
+    setIsSaving(true);
+    try {
+        await onSave({
+          title,
+          sport,
+          city,
+          date: new Date(date),
+          description,
+          imageUrl,
+          registrationUrl,
+        });
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -88,7 +95,7 @@ export const EventForm: React.FC<EventFormProps> = ({ isOpen, onClose, onSave, e
           <h2 className="text-lg font-bold">{eventToEdit ? 'Edit Event' : 'Create New Event'}</h2>
           <button onClick={onClose} className="text-2xl font-bold p-1 leading-none" aria-label="Close">&times;</button>
         </header>
-        <form onSubmit={handleSubmit} className="flex-grow p-6 space-y-4 overflow-y-auto">
+        <div className="flex-grow p-6 space-y-4 overflow-y-auto">
             <FormRow label="Event Title" error={errors.title}>
                 <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-md focus:ring-primary focus:border-primary" />
             </FormRow>
@@ -117,10 +124,12 @@ export const EventForm: React.FC<EventFormProps> = ({ isOpen, onClose, onSave, e
             <FormRow label="Registration URL" error={errors.registrationUrl}>
                 <input type="url" value={registrationUrl} onChange={e => setRegistrationUrl(e.target.value)} placeholder="https://example.com/register" className="w-full p-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-md focus:ring-primary focus:border-primary" />
             </FormRow>
-        </form>
+        </div>
         <footer className="p-4 border-t border-light-border dark:border-dark-border flex justify-end gap-4 flex-shrink-0">
-          <button onClick={onClose} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 font-semibold transition-colors rounded-md">Cancel</button>
-          <button onClick={handleSubmit} className="px-4 py-2 bg-primary text-white font-semibold transition-colors hover:bg-primary-dark rounded-md">{eventToEdit ? 'Save Changes' : 'Create Event'}</button>
+          <button onClick={onClose} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 font-semibold transition-colors rounded-md" disabled={isSaving}>Cancel</button>
+          <button onClick={handleSubmit} className="px-4 py-2 bg-primary text-white font-semibold transition-colors hover:bg-primary-dark rounded-md disabled:bg-gray-400" disabled={isSaving}>
+            {isSaving ? 'Saving...' : (eventToEdit ? 'Save Changes' : 'Create Event')}
+          </button>
         </footer>
       </div>
     </div>

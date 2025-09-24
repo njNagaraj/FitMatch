@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ICONS } from '../../../shared/constants';
 import { AdminStatCard } from './AdminStatCard';
 import { useUsers } from '../../users/contexts/UserContext';
@@ -13,20 +13,31 @@ export const AdminDashboard: React.FC = () => {
   const { events } = useEvents();
   const { currentUser } = useAuth();
   const { addToast } = useToast();
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
-  const handleDeleteUser = (userId: string) => {
+  const handleDeleteUser = async (userId: string) => {
     if(userId === currentUser?.id) {
         addToast("You cannot delete your own account.", 'error');
         return;
     }
-    if (window.confirm('Are you sure you want to permanently delete this user and all their created activities?')) {
-      deleteUser(userId);
+    if (window.confirm('Are you sure you want to delete this user profile? This will also delete their created activities.')) {
+      setProcessingId(userId);
+      try {
+        await deleteUser(userId);
+      } finally {
+        setProcessingId(null);
+      }
     }
   };
 
-  const handleDeleteActivity = (activityId: string) => {
+  const handleDeleteActivity = async (activityId: string) => {
     if (window.confirm('Are you sure you want to permanently delete this activity?')) {
-      deleteActivity(activityId);
+      setProcessingId(activityId);
+      try {
+        await deleteActivity(activityId);
+      } finally {
+        setProcessingId(null);
+      }
     }
   };
 
@@ -57,8 +68,10 @@ export const AdminDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {users.map(user => (
-                  <tr key={user.id} className="border-b border-light-border dark:border-dark-border">
+                {users.map(user => {
+                  const isProcessing = processingId === user.id;
+                  return (
+                  <tr key={user.id} className={`border-b border-light-border dark:border-dark-border ${isProcessing ? 'opacity-50' : ''}`}>
                     <td className="px-6 py-4 font-medium flex items-center gap-3">
                         <img src={user.avatarUrl} alt={user.name} className="w-8 h-8 rounded-full" />
                         <div>
@@ -73,10 +86,12 @@ export const AdminDashboard: React.FC = () => {
                       }
                     </td>
                     <td className="px-6 py-4">
-                      <button onClick={() => handleDeleteUser(user.id)} disabled={user.id === currentUser?.id} className="font-medium text-red-600 dark:text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
+                      <button onClick={() => handleDeleteUser(user.id)} disabled={user.id === currentUser?.id || isProcessing} className="font-medium text-red-600 dark:text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">
+                        {isProcessing ? 'Deleting...' : 'Delete'}
+                      </button>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>
@@ -100,13 +115,16 @@ export const AdminDashboard: React.FC = () => {
               <tbody>
                 {activities.map(activity => {
                    const creator = getUserById(activity.creatorId);
+                   const isProcessing = processingId === activity.id;
                    return (
-                    <tr key={activity.id} className="border-b border-light-border dark:border-dark-border">
+                    <tr key={activity.id} className={`border-b border-light-border dark:border-dark-border ${isProcessing ? 'opacity-50' : ''}`}>
                         <td className="px-6 py-4 font-medium">{activity.title}</td>
                         <td className="px-6 py-4">{creator?.name || 'N/A'}</td>
                         <td className="px-6 py-4">{activity.participants.length} / {activity.partnersNeeded === 0 ? '∞' : activity.partnersNeeded}</td>
                         <td className="px-6 py-4">
-                          <button onClick={() => handleDeleteActivity(activity.id)} className="font-medium text-red-600 dark:text-red-500 hover:underline">Delete</button>
+                          <button onClick={() => handleDeleteActivity(activity.id)} disabled={isProcessing} className="font-medium text-red-600 dark:text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">
+                            {isProcessing ? 'Deleting...' : 'Delete'}
+                          </button>
                         </td>
                     </tr>
                    )

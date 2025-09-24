@@ -12,16 +12,22 @@ export const Signup: React.FC<SignupProps> = ({ setAuthPage }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (password.length < 8) {
             setError('Password must be at least 8 characters long.');
             return;
         }
         setError('');
-        signup(name, email, password);
-        // The signup function in useAuth will handle success/error and navigation.
+        setIsLoading(true);
+        try {
+            await signup(name, email, password);
+            // The auth context listener will handle navigation on successful signup
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -52,6 +58,7 @@ export const Signup: React.FC<SignupProps> = ({ setAuthPage }) => {
                             onChange={e => setName(e.target.value)}
                             className="w-full p-3 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border focus:ring-primary focus:border-primary"
                             required
+                            disabled={isLoading}
                         />
                     </div>
                     <div>
@@ -62,6 +69,7 @@ export const Signup: React.FC<SignupProps> = ({ setAuthPage }) => {
                             onChange={e => setEmail(e.target.value)}
                             className="w-full p-3 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border focus:ring-primary focus:border-primary"
                             required
+                            disabled={isLoading}
                         />
                     </div>
                     <div>
@@ -72,14 +80,15 @@ export const Signup: React.FC<SignupProps> = ({ setAuthPage }) => {
                             onChange={e => setPassword(e.target.value)}
                             className="w-full p-3 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border focus:ring-primary focus:border-primary"
                             required
+                            disabled={isLoading}
                         />
                     </div>
-                    <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white font-semibold px-4 py-3 transition-colors">
-                        Sign Up
+                    <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white font-semibold px-4 py-3 transition-colors disabled:bg-gray-400" disabled={isLoading}>
+                        {isLoading ? 'Creating Account...' : 'Sign Up'}
                     </button>
                      <p className="text-center text-sm">
                         Already have an account?{' '}
-                        <button type="button" onClick={() => setAuthPage('login')} className="font-semibold text-primary hover:underline">
+                        <button type="button" onClick={() => setAuthPage('login')} className="font-semibold text-primary hover:underline" disabled={isLoading}>
                             Login
                         </button>
                     </p>
