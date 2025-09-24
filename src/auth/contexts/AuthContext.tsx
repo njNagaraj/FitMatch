@@ -25,8 +25,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { addToast } = useToast();
 
   useEffect(() => {
+    // onAuthStateChange fires an INITIAL_SESSION event on page load,
+    // which is perfect for checking the user's state.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setLoading(true);
       if (session?.user) {
         try {
           const profile = await userService.getUserProfile(session.user.id);
@@ -45,8 +46,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               
             setCurrentUser(user);
           } else {
-             // This case might happen if the profile trigger fails
-             console.error("User is authenticated but profile data is missing.");
+             // This can happen if profile creation fails or is manually deleted.
+             // Signing out prevents user being stuck in a broken auth state.
+             console.error("User is authenticated but profile data is missing. Logging out.");
+             await supabase.auth.signOut();
              setCurrentUser(null);
           }
         } catch (error) {
@@ -56,6 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setCurrentUser(null);
       }
+      // This is the key: always set loading to false after the initial check is complete.
       setLoading(false);
     });
 

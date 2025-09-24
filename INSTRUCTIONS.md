@@ -195,9 +195,14 @@ returns boolean as $$
   );
 $$ language sql security definer;
 
+-- This is the crucial policy for realtime. It allows users to READ messages
+-- only if they are a participant in the activity.
+-- Without this SELECT policy, the realtime server will not broadcast new messages to the user.
 create policy "Participants can view messages in their activity chat." on messages
     for select using (is_participant(activity_id, auth.uid()));
 
+-- This policy allows users to SEND (INSERT) messages. It ensures a user can only
+-- write to a chat if they are a participant in the corresponding activity.
 create policy "Participants can send messages in their activity chat." on messages
     for insert with check (is_participant(activity_id, auth.uid()) and auth.uid() = sender_id and is_system_message = false);
 
