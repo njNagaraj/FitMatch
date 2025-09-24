@@ -243,16 +243,16 @@ This final step creates a trigger that automatically posts a "User has joined" o
 **1. Create the Trigger Function**
 This function contains the logic to post a message. Copy this into the Supabase **SQL Editor** and click **RUN**.
 ```sql
--- This function runs when a user joins or leaves an activity.
--- It securely posts a system message to the correct chat.
+-- This updated function removes the 'set role' command, which was causing the error.
+-- The 'security definer' property is sufficient to bypass RLS for inserting system messages.
 create or replace function public.handle_activity_participation_change()
 returns trigger as $$
 declare
   user_profile record;
 begin
-  -- Temporarily elevate privileges to bypass RLS policies for this internal operation.
-  -- This is a secure way to allow the database to perform actions that users cannot.
-  set local role postgres;
+  -- This security definer function runs with the permissions of its owner,
+  -- bypassing the RLS policies of the calling user. This allows us to insert
+  -- a system message which the user's own RLS policy would normally prevent.
 
   if (tg_op = 'INSERT') then
     -- Get the profile of the user who joined
@@ -267,9 +267,6 @@ begin
     insert into public.messages (activity_id, text, is_system_message)
     values (old.activity_id, user_profile.name || ' has left the activity.', true);
   end if;
-
-  -- Revert to the original role
-  reset role;
 
   return null; -- The return value is ignored for AFTER triggers.
 end;
