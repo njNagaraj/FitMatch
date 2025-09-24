@@ -24,80 +24,96 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
 
-  // This useEffect hook handles the initial session check and subsequent auth state changes.
+  // --- Initial session check & auth state listener ---
   useEffect(() => {
-    // Function to check for an active session on initial load.
     const checkUserSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        try {
-          const profile = await userService.getUserProfile(session.user.id);
-          if (profile) {
-            const user: User = { id: session.user.id, email: session.user.email, ...profile };
-            const storedLocation = localStorage.getItem(`fitmatch_currentLocation_${user.id}`);
-            user.currentLocation = storedLocation ? JSON.parse(storedLocation) : { lat: 13.0471, lon: 80.1873 };
-            setCurrentUser(user);
-          } else {
-            console.error("User session exists but no profile found. Logging out.");
-            await supabase.auth.signOut();
-            setCurrentUser(null);
-          }
-        } catch (error) {
-          console.error("Error fetching profile on initial load:", error);
+      console.log("[AuthProvider] >>> Checking session on mount...");
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log("[AuthProvider] getSession result:", { session, error });
+
+        if (session?.user) {
+          console.log(`[AuthProvider] Session found for user: ${session.user.id}`);
+
+          // Show app immediately with minimal user info
+          setCurrentUser({ id: session.user.id, email: session.user.email, name: "Loading...", isAdmin: false });
+
+          // Fetch profile in background
+          userService.getUserProfile(session.user.id)
+            .then(profile => {
+              if (profile) {
+                setCurrentUser(prev => ({ ...prev, ...profile }));
+                console.log("[AuthProvider] Profile loaded in background:", profile);
+              } else {
+                console.warn("[AuthProvider] Profile missing, keeping minimal user info");
+              }
+            })
+            .catch(err => console.error("[AuthProvider] Profile fetch failed:", err));
+        } else {
+          console.log("[AuthProvider] No active session");
           setCurrentUser(null);
         }
+      } catch (err) {
+        console.error("[AuthProvider] Error in checkUserSession:", err);
+        setCurrentUser(null);
+      } finally {
+        console.log("[AuthProvider] Setting loading = false (initial check)");
+        setLoading(false);
       }
-      // Crucially, set loading to false after the initial check is complete.
-      setLoading(false);
     };
 
     checkUserSession();
 
-    // Set up a listener for real-time auth changes (e.g., login, logout).
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // Listen for auth state changes (login, logout, refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("[AuthProvider] Auth state change event:", _event, session);
+
       if (session?.user) {
-        // A user has logged in or the session was refreshed. Fetch their profile.
-        const profile = await userService.getUserProfile(session.user.id);
-        if (profile) {
-          setCurrentUser({ id: session.user.id, email: session.user.email, ...profile });
-        } else {
-          // This is an edge case where a user exists in auth but not in profiles.
-          setCurrentUser(null);
-        }
+        // Immediately set minimal user
+        setCurrentUser({ id: session.user.id, email: session.user.email, name: "Loading...", isAdmin: false });
+
+        // Fetch profile asynchronously
+        userService.getUserProfile(session.user.id)
+          .then(profile => {
+            if (profile) setCurrentUser(prev => ({ ...prev, ...profile }));
+          })
+          .catch(err => console.error("[AuthProvider] Profile fetch failed on auth change:", err));
       } else {
-        // The user has logged out.
         setCurrentUser(null);
       }
+
+      setLoading(false); // Ensure loader removed
     });
 
     return () => {
+      console.log("[AuthProvider] Cleaning up subscription");
       subscription.unsubscribe();
     };
   }, []);
-  
-  // Effect to get and update user's live location
+
+  // --- Update current user location ---
   useEffect(() => {
     if (currentUser) {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    updateCurrentUserLocation({ lat: latitude, lon: longitude });
-                },
-                (error) => {
-                    console.error("Geolocation error:", error);
-                    addToast("Could not get fresh location. Using last known.", "info");
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
-        } else {
-            addToast("Geolocation is not supported by this browser.", "error");
-        }
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          position => {
+            const { latitude, longitude } = position.coords;
+            updateCurrentUserLocation({ lat: latitude, lon: longitude });
+          },
+          error => {
+            console.error("Geolocation error:", error);
+            addToast("Could not get fresh location. Using last known.", "info");
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      } else {
+        addToast("Geolocation is not supported by this browser.", "error");
+      }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser?.id, addToast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id]);
 
-
+  // --- Auth actions ---
   const login = async (email: string, password: string) => {
     try {
       await authService.login(email, password);
@@ -123,39 +139,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     if (currentUser) {
-        localStorage.removeItem(`fitmatch_currentLocation_${currentUser.id}`);
+      localStorage.removeItem(`fitmatch_currentLocation_${currentUser.id}`);
     }
     try {
-        await authService.logout();
-        sessionStorage.removeItem('start_tour');
+      await authService.logout();
+      sessionStorage.removeItem('start_tour');
     } catch (err) {
-        console.error("Logout failed: ", err);
-        addToast("Logout failed. Please try again.", "error");
+      console.error("Logout failed: ", err);
+      addToast("Logout failed. Please try again.", "error");
     }
   };
 
   const updateUserProfile = async (updatedData: Partial<Pick<User, 'name' | 'homeLocation' | 'viewRadius'>>) => {
-      if (!currentUser) return;
-      try {
-          const updatedProfile = await userService.updateUserProfile(currentUser.id, updatedData);
-          setCurrentUser(prevUser => prevUser ? { ...prevUser, ...updatedProfile } : null);
-          addToast('Profile updated successfully!', 'success');
-      } catch (error) {
-          addToast('Failed to update profile.', 'error');
-      }
-  };
-  
-  const updateCurrentUserLocation = (coords: { lat: number; lon: number }) => {
-      if(!currentUser) return;
-      setCurrentUser(prevUser => {
-        if (!prevUser) return null;
-        const updatedUser = { ...prevUser, currentLocation: coords };
-        localStorage.setItem(`fitmatch_currentLocation_${prevUser.id}`, JSON.stringify(coords));
-        return updatedUser;
-      });
+    if (!currentUser) return;
+    try {
+      const updatedProfile = await userService.updateUserProfile(currentUser.id, updatedData);
+      setCurrentUser(prevUser => prevUser ? { ...prevUser, ...updatedProfile } : null);
+      addToast('Profile updated successfully!', 'success');
+    } catch (error) {
+      addToast('Failed to update profile.', 'error');
+    }
   };
 
-  const value = {
+  const updateCurrentUserLocation = (coords: { lat: number; lon: number }) => {
+    if (!currentUser) return;
+    setCurrentUser(prevUser => {
+      if (!prevUser) return null;
+      const updatedUser = { ...prevUser, currentLocation: coords };
+      localStorage.setItem(`fitmatch_currentLocation_${prevUser.id}`, JSON.stringify(coords));
+      return updatedUser;
+    });
+  };
+
+  const value: AuthContextType = {
     currentUser,
     isAuthenticated: !!currentUser,
     isAdmin: currentUser?.isAdmin || false,
@@ -176,8 +192,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };
