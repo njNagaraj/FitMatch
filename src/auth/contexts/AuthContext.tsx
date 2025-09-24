@@ -24,43 +24,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
 
+  // This useEffect hook handles the initial session check and subsequent auth state changes.
   useEffect(() => {
-    // onAuthStateChange fires an INITIAL_SESSION event on page load,
-    // which is perfect for checking the user's state.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // Function to check for an active session on initial load.
+    const checkUserSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         try {
           const profile = await userService.getUserProfile(session.user.id);
           if (profile) {
-            const user: User = {
-              id: session.user.id,
-              email: session.user.email,
-              ...profile
-            };
-            
-            // Attempt to load location from localStorage for a faster initial render
+            const user: User = { id: session.user.id, email: session.user.email, ...profile };
             const storedLocation = localStorage.getItem(`fitmatch_currentLocation_${user.id}`);
-            user.currentLocation = storedLocation 
-              ? JSON.parse(storedLocation)
-              : { lat: 13.0471, lon: 80.1873 }; // Default location
-              
+            user.currentLocation = storedLocation ? JSON.parse(storedLocation) : { lat: 13.0471, lon: 80.1873 };
             setCurrentUser(user);
           } else {
-             // This can happen if profile creation fails or is manually deleted.
-             // Signing out prevents user being stuck in a broken auth state.
-             console.error("User is authenticated but profile data is missing. Logging out.");
-             await supabase.auth.signOut();
-             setCurrentUser(null);
+            console.error("User session exists but no profile found. Logging out.");
+            await supabase.auth.signOut();
+            setCurrentUser(null);
           }
         } catch (error) {
-           console.error("Error fetching user profile:", error);
-           setCurrentUser(null);
+          console.error("Error fetching profile on initial load:", error);
+          setCurrentUser(null);
+        }
+      }
+      // Crucially, set loading to false after the initial check is complete.
+      setLoading(false);
+    };
+
+    checkUserSession();
+
+    // Set up a listener for real-time auth changes (e.g., login, logout).
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        // A user has logged in or the session was refreshed. Fetch their profile.
+        const profile = await userService.getUserProfile(session.user.id);
+        if (profile) {
+          setCurrentUser({ id: session.user.id, email: session.user.email, ...profile });
+        } else {
+          // This is an edge case where a user exists in auth but not in profiles.
+          setCurrentUser(null);
         }
       } else {
+        // The user has logged out.
         setCurrentUser(null);
       }
-      // This is the key: always set loading to false after the initial check is complete.
-      setLoading(false);
     });
 
     return () => {
