@@ -13,6 +13,7 @@ export const Signup: React.FC<SignupProps> = ({ setAuthPage }) => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [signupSuccess, setSignupSuccess] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -24,11 +25,38 @@ export const Signup: React.FC<SignupProps> = ({ setAuthPage }) => {
         setIsLoading(true);
         try {
             await signup(name, email, password);
-            // The auth context listener will handle navigation on successful signup
+            setSignupSuccess(true);
+        } catch (err: any) {
+            if (err.message && err.message.includes('User with this email already exists')) {
+                setError('User with this email already exists. Please login.');
+            } else {
+                setError(err.message || 'An unexpected error occurred.');
+            }
         } finally {
             setIsLoading(false);
         }
     };
+
+    if (signupSuccess) {
+        return (
+            <div className="flex items-center justify-center min-h-screen p-4">
+                <div className="w-full max-w-md text-center">
+                    <div className="bg-light-bg-secondary dark:bg-dark-bg-secondary p-8 border border-light-border dark:border-dark-border space-y-6">
+                        <h2 className="text-2xl font-bold">Registration Successful!</h2>
+                        <p className="text-light-text-secondary dark:text-dark-text-secondary">
+                            A confirmation link has been sent to your email address. Please check your inbox and follow the instructions to complete your registration.
+                        </p>
+                        <button 
+                            onClick={() => { setSignupSuccess(false); setAuthPage('login'); }} 
+                            className="w-full bg-primary hover:bg-primary-dark text-white font-semibold px-4 py-3 transition-colors"
+                        >
+                            Back to Login
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex items-center justify-center min-h-screen p-4">

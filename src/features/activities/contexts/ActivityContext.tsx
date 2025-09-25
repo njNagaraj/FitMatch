@@ -5,6 +5,7 @@ import { useAuth } from '../../../auth/contexts/AuthContext';
 import { useToast } from '../../../shared/contexts/ToastContext';
 import { DEFAULT_VIEW_RADIUS_KM } from '../../../shared/constants';
 import { haversineDistance } from '../../../shared/utils/geolocation';
+import { useChats } from '../../chats/contexts/ChatContext';
 
 type ActivityData = Omit<Activity, 'id' | 'creatorId' | 'participants'>;
 
@@ -35,6 +36,7 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const { currentUser, isAuthenticated } = useAuth();
   const { addToast } = useToast();
+  const { fetchChats } = useChats();
 
   const fetchData = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -125,6 +127,7 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ));
       addToast(`Successfully joined "${activity.title}"!`, 'success');
       // The database trigger will now handle creating the system message.
+      await fetchChats();
     } catch (error: any) {
       addToast(error.message, 'error');
     }
@@ -145,6 +148,7 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ));
       addToast(`You have left "${activity.title}".`, 'info');
        // The database trigger will now handle creating the system message.
+       await fetchChats();
     } catch (error: any) {
       addToast(error.message, 'error');
     }

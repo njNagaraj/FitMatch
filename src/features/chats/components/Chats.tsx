@@ -8,16 +8,16 @@ import { useAuth } from '../../../auth/contexts/AuthContext';
 
 export const Chats: React.FC = () => {
   const { chats } = useChats();
-  const { myActivities, getActivityById } = useActivities();
+  const { getActivityById } = useActivities();
   const { getUserById } = useUsers();
   const { currentUser } = useAuth();
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   
   if (!currentUser) return null;
 
-  // Show chats for any activity the user is currently a member of.
-  const myActivityIds = useMemo(() => new Set(myActivities.map(a => a.id)), [myActivities]);
-  const userChats = useMemo(() => chats.filter(c => myActivityIds.has(c.activityId)), [chats, myActivityIds]);
+  // The `chats` from `useChats` are already filtered by RLS for the current user.
+  // No need for additional client-side filtering with `myActivities`.
+  const userChats = chats;
   
   const selectedChat = userChats.find(c => c.id === selectedChatId);
 

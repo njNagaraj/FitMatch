@@ -8,6 +8,7 @@ interface ChatContextType {
   chats: Chat[];
   loading: boolean;
   sendMessage: (activityId: string, text: string) => Promise<Message>;
+  fetchChats: () => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -34,61 +35,71 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchChats();
   }, [fetchChats]);
 
+  // Create a stable dependency based on the IDs of the chats
+  const chatIdsString = JSON.stringify(chats.map(c => c.id));
+
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const channel = supabase.channel('messages-channel')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        (payload) => {
-          // --- DEBUG LOG ---
-          // This log will appear in your browser's developer console when a new message is received.
-          // If you send a message and this log DOES NOT appear, it means:
-          // 1. You may have forgotten to enable "Realtime" for the 'messages' table in your Supabase dashboard (Database > Replication).
-          // 2. Your Row Level Security (RLS) policies for the 'messages' table are preventing the new message from being sent to you.
-          console.log('🎉 [FitMatch Realtime] New message received:', payload.new);
+    const handleNewMessage = (payload: any) => {
+      console.log('🎉 [Broadcast] New message received:', payload);
 
-          const newMessage: Message = {
-            id: payload.new.id,
-            timestamp: new Date(payload.new.created_at),
-            senderId: payload.new.sender_id,
-            text: payload.new.text,
-            isSystemMessage: payload.new.is_system_message,
-          };
-          const activityId = payload.new.activity_id;
+      // FIX: The actual message data is nested inside the 'payload' property of the broadcast event.
+      const record = payload.payload?.record;
+      if (!record) {
+        console.warn('Received broadcast without a valid record property in its payload:', payload);
+        return;
+      }
 
-          setChats(prevChats => {
-            const chatExists = prevChats.some(c => c.activityId === activityId);
-            if (chatExists) {
-              return prevChats.map(chat =>
-                chat.activityId === activityId
-                  ? { ...chat, messages: [...chat.messages, newMessage] }
-                  : chat
-              );
-            } else {
-              // New chat created by the first message (e.g., from a system message)
-              const newChat: Chat = {
-                id: activityId,
-                activityId,
-                messages: [newMessage],
-              };
-              return [...prevChats, newChat];
-            }
-          });
+      const activityId = record.activity_id;
+      
+      const newMessage: Message = {
+        id: record.id,
+        timestamp: new Date(record.created_at),
+        senderId: record.sender_id,
+        text: record.text,
+        isSystemMessage: record.is_system_message,
+        status: 'sent',
+      };
+
+      setChats(prevChats => {
+        const chat = prevChats.find(c => c.activityId === activityId);
+        
+        // Prevent adding duplicate messages if the listener fires multiple times
+        if (chat && chat.messages.some(m => m.id === newMessage.id)) {
+            return prevChats;
         }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
+        
+        if (chat) {
+          return prevChats.map(c =>
+            c.activityId === activityId
+              ? { ...c, messages: [...c.messages, newMessage] }
+              : c
+          );
+        } else {
+          // If a message arrives for a chat that isn't in the state yet
+          return [...prevChats, { id: activityId, activityId: activityId, messages: [newMessage] }];
+        }
+      });
     };
 
-  }, [isAuthenticated]);
-  
+    const channels: any[] = chats.map(chat => {
+      return supabase.channel(`activity:${chat.activityId}`, { config: { private: true } })
+        .on('broadcast', { event: 'INSERT' }, handleNewMessage)
+        .subscribe();
+    });
+
+    return () => {
+      channels.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, chatIdsString]);
+
   const sendMessage = async (activityId: string, text: string): Promise<Message> => {
     if (!text.trim() || !currentUser) {
-        throw new Error("Message is empty or user not logged in.");
+      throw new Error("Message is empty or user not logged in.");
     }
     // The message will be added to state via the realtime subscription,
     // so we just need to call the service.
@@ -99,6 +110,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     chats,
     loading,
     sendMessage,
+    fetchChats,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

@@ -263,14 +263,14 @@ begin
     -- Get the profile of the user who joined
     select name into user_profile from public.profiles where id = new.user_id;
     -- Post a "joined" message
-    insert into public.messages (activity_id, text, is_system_message)
-    values (new.activity_id, user_profile.name || ' has joined the activity!', true);
+    insert into public.messages (activity_id, sender_id, text, is_system_message)
+    values (new.activity_id, new.user_id, user_profile.name || ' has joined the activity!', true);
   elsif (tg_op = 'DELETE') then
     -- Get the profile of the user who left
     select name into user_profile from public.profiles where id = old.user_id;
     -- Post a "left" message
-    insert into public.messages (activity_id, text, is_system_message)
-    values (old.activity_id, user_profile.name || ' has left the activity.', true);
+    insert into public.messages (activity_id, sender_id, text, is_system_message)
+    values (old.activity_id, new.user_id, user_profile.name || ' has left the activity.', true);
   end if;
 
   return null; -- The return value is ignored for AFTER triggers.

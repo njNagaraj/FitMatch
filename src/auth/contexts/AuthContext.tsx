@@ -10,8 +10,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   loading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (name: string, email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   updateUserProfile: (updatedData: Partial<Pick<User, 'name' | 'homeLocation' | 'viewRadius'>>) => Promise<void>;
   updateCurrentUserLocation: (coords: { lat: number; lon: number }) => void;
@@ -27,13 +27,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // --- Initial session check & auth state listener ---
   useEffect(() => {
     const checkUserSession = async () => {
-      console.log("[AuthProvider] >>> Checking session on mount...");
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        console.log("[AuthProvider] getSession result:", { session, error });
 
         if (session?.user) {
-          console.log(`[AuthProvider] Session found for user: ${session.user.id}`);
 
           // Show app immediately with minimal user info
           setCurrentUser({ id: session.user.id, email: session.user.email, name: "Loading...", isAdmin: false });
@@ -43,21 +40,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .then(profile => {
               if (profile) {
                 setCurrentUser(prev => ({ ...prev, ...profile }));
-                console.log("[AuthProvider] Profile loaded in background:", profile);
               } else {
                 console.warn("[AuthProvider] Profile missing, keeping minimal user info");
               }
             })
             .catch(err => console.error("[AuthProvider] Profile fetch failed:", err));
         } else {
-          console.log("[AuthProvider] No active session");
           setCurrentUser(null);
         }
       } catch (err) {
         console.error("[AuthProvider] Error in checkUserSession:", err);
         setCurrentUser(null);
       } finally {
-        console.log("[AuthProvider] Setting loading = false (initial check)");
         setLoading(false);
       }
     };
@@ -66,7 +60,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Listen for auth state changes (login, logout, refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("[AuthProvider] Auth state change event:", _event, session);
 
       if (session?.user) {
         // Immediately set minimal user
@@ -86,7 +79,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => {
-      console.log("[AuthProvider] Cleaning up subscription");
       subscription.unsubscribe();
     };
   }, []);
@@ -115,26 +107,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // --- Auth actions ---
   const login = async (email: string, password: string) => {
-    try {
-      await authService.login(email, password);
-      sessionStorage.removeItem('start_tour');
-      return true;
-    } catch (error: any) {
-      console.error(error);
-      addToast(error.message, 'error');
-      return false;
-    }
+    await authService.login(email, password);
+    sessionStorage.removeItem('start_tour');
   };
 
   const signup = async (name: string, email: string, password: string) => {
-    try {
-      await authService.signup(name, email, password);
-      sessionStorage.setItem('start_tour', 'true');
-      return true;
-    } catch (error: any) {
-      addToast(error.message, 'error');
-      return false;
-    }
+    await authService.signup(name, email, password);
+    sessionStorage.setItem('start_tour', 'true');
   };
 
   const logout = async () => {
