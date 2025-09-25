@@ -81,7 +81,7 @@ export const Profile: React.FC = () => {
                         alt={currentUser.name} 
                         className="w-32 h-32 rounded-full mb-4 sm:mb-0 border-4 border-primary flex-shrink-0"
                     />
-                    <div className="flex-grow w-full">
+                    <div className="flex-grow w-full min-w-0">
                         {isEditing ? (
                            <form onSubmit={handleSave} className="space-y-4">
                                <FormRow label="Full Name">

@@ -164,19 +164,6 @@ export const Login: React.FC<LoginProps> = ({ setAuthPage }) => {
                         </button>
                     </p>
                 </form>
-
-                <div className="mt-4 bg-light-bg-secondary dark:bg-dark-bg-secondary p-4 border border-light-border dark:border-dark-border text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                    <h3 className="font-bold text-light-text dark:text-dark-text mb-2">Demo User Accounts</h3>
-                    <ul className="list-disc list-inside space-y-1">
-                        <li><span className="font-semibold">Nagaraj (Chennai):</span> nagaraj@fitmatch.com (pw: password123)</li>
-                        <li><span className="font-semibold">Priya (Chennai):</span> priya@fitmatch.com (pw: password123)</li>
-                        <li><span className="font-semibold">Sam (Bangalore):</span> sam@fitmatch.com (pw: password123)</li>
-                    </ul>
-                    <h3 className="font-bold text-light-text dark:text-dark-text mt-3 mb-2">Admin Account</h3>
-                     <ul className="list-disc list-inside">
-                        <li><span className="font-semibold">Admin:</span> admin@fitmatch.com (pw: admin123)</li>
-                    </ul>
-                </div>
             </div>
         </div>
     );
