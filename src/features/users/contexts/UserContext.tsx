@@ -8,7 +8,7 @@ interface UserContextType {
   users: User[];
   loading: boolean;
   getUserById: (id: string) => User | undefined;
-  deleteUser: (userId: string) => Promise<void>;
+  setUserDeactivationStatus: (userId: string, isDeactivated: boolean) => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -38,15 +38,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getUserById = (id: string) => users.find(u => u.id === id);
   
-  const deleteUser = async (userId: string) => {
-    const userToDelete = getUserById(userId);
-    if (!userToDelete) return;
+  const setUserDeactivationStatus = async (userId: string, isDeactivated: boolean) => {
+    const userToUpdate = getUserById(userId);
+    if (!userToUpdate) return;
     try {
-      await userService.deleteUser(userId);
-      setUsers(prev => prev.filter(u => u.id !== userId));
-      addToast(`User "${userToDelete.name}" has been deleted.`, 'info');
-    } catch(error) {
-      addToast('Failed to delete user.', 'error');
+      const updatedUser = await userService.setUserDeactivationStatus(userId, isDeactivated);
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, isDeactivated: updatedUser.isDeactivated } : u));
+      addToast(`User "${userToUpdate.name}" has been ${isDeactivated ? 'deactivated' : 'activated'}.`, 'info');
+    } catch(error: any) {
+      addToast(error.message || 'Failed to update user status.', 'error');
     }
   };
 
@@ -54,7 +54,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     users,
     loading,
     getUserById,
-    deleteUser,
+    setUserDeactivationStatus,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

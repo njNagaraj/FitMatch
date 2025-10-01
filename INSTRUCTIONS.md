@@ -290,4 +290,40 @@ create trigger on_participation_change
   for each row execute procedure public.handle_activity_participation_change();
 ```
 
+### Step 7: Implementing User Deactivation
+
+To replace the permanent "delete user" functionality with a safer "deactivate user" feature, follow these steps.
+
+**1. Add a Deactivation Column to the `profiles` Table**
+
+Run this SQL in the **SQL Editor** to add a new column that will track if a user is deactivated.
+```sql
+-- Add a column to track deactivation status
+alter table public.profiles
+add column is_deactivated boolean default false not null;
+
+-- Optional: Add an index for faster lookups
+create index idx_profiles_is_deactivated on public.profiles(is_deactivated);
+```
+
+**2. Create a Function to Check User Status**
+
+For security, the app can't check a user's status before they log in. This special function (an RPC) allows the app to safely ask the database if a user is deactivated using only their email. Run this in the **SQL Editor**.
+```sql
+-- This function securely checks if a user is deactivated based on their email.
+-- 'security definer' allows it to access the auth.users table, which is normally protected.
+create or replace function get_user_deactivation_status(user_email text)
+returns boolean as $$
+declare
+  deactivated_status boolean;
+begin
+  select is_deactivated into deactivated_status
+  from public.profiles
+  where id = (select id from auth.users where email = user_email);
+
+  return deactivated_status;
+end;
+$$ language plpgsql security definer;
+```
+
 You are now all set! The app will use your Supabase backend.

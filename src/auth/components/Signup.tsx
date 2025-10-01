@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ICONS, APP_NAME, APP_TAGLINE } from '../../shared/constants';
 import { useAuth } from '../contexts/AuthContext';
+import { userService } from '../../api/services/userService';
 
 interface SignupProps {
     setAuthPage: (page: 'login' | 'signup') => void;
@@ -28,7 +29,12 @@ export const Signup: React.FC<SignupProps> = ({ setAuthPage }) => {
             setSignupSuccess(true);
         } catch (err: any) {
             if (err.message && err.message.includes('User with this email already exists')) {
-                setError('User with this email already exists. Please login.');
+                const isDeactivated = await userService.isUserDeactivatedByEmail(email);
+                if (isDeactivated) {
+                    setError('Your account is suspended.');
+                } else {
+                    setError('User with this email already exists. Please login.');
+                }
             } else {
                 setError(err.message || 'An unexpected error occurred.');
             }

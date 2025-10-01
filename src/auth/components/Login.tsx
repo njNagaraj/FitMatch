@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ICONS, APP_NAME, APP_TAGLINE } from '../../shared/constants';
 import { useAuth } from '../contexts/AuthContext';
 import { authService } from '../../api/services/authService';
+import { userService } from '../../api/services/userService';
 
 interface LoginProps {
     setAuthPage: (page: 'login' | 'signup') => void;
@@ -25,6 +26,13 @@ export const Login: React.FC<LoginProps> = ({ setAuthPage }) => {
         setError('');
         setIsLoading(true);
         try {
+            const isDeactivated = await userService.isUserDeactivatedByEmail(email);
+            if (isDeactivated) {
+                setError('Your account is suspended.');
+                setIsLoading(false);
+                return;
+            }
+
             await login(email, password);
             // onAuthStateChange will handle successful login
         } catch (err: any) {

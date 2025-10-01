@@ -17,6 +17,7 @@ export interface User {
   homeLocation?: { lat: number; lon: number; name: string };
   isAdmin?: boolean;
   viewRadius?: number;
+  isDeactivated?: boolean;
 }
 
 export interface Sport {

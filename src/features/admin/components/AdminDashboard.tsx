@@ -8,22 +8,23 @@ import { useAuth } from '../../../auth/contexts/AuthContext';
 import { useToast } from '../../../shared/contexts/ToastContext';
 
 export const AdminDashboard: React.FC = () => {
-  const { users, deleteUser, getUserById } = useUsers();
+  const { users, setUserDeactivationStatus, getUserById } = useUsers();
   const { activities, deleteActivity } = useActivities();
   const { events } = useEvents();
   const { currentUser } = useAuth();
   const { addToast } = useToast();
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  const handleDeleteUser = async (userId: string) => {
+  const handleUpdateUserStatus = async (userId: string, isDeactivated: boolean) => {
     if(userId === currentUser?.id) {
-        addToast("You cannot delete your own account.", 'error');
+        addToast("You cannot change the status of your own account.", 'error');
         return;
     }
-    if (window.confirm('Are you sure you want to delete this user profile? This will also delete their created activities.')) {
+    const action = isDeactivated ? 'deactivate' : 'activate';
+    if (window.confirm(`Are you sure you want to ${action} this user account?`)) {
       setProcessingId(userId);
       try {
-        await deleteUser(userId);
+        await setUserDeactivationStatus(userId, isDeactivated);
       } finally {
         setProcessingId(null);
       }
@@ -63,31 +64,32 @@ export const AdminDashboard: React.FC = () => {
               <thead className="bg-light-bg dark:bg-dark-bg text-xs uppercase text-light-text-secondary dark:text-dark-text-secondary">
                 <tr>
                   <th scope="col" className="px-6 py-3">User</th>
-                  <th scope="col" className="px-6 py-3">Role</th>
+                  <th scope="col" className="px-6 py-3">Status</th>
                   <th scope="col" className="px-6 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(user => {
                   const isProcessing = processingId === user.id;
+                  const isDeactivated = user.isDeactivated;
                   return (
                   <tr key={user.id} className={`border-b border-light-border dark:border-dark-border ${isProcessing ? 'opacity-50' : ''}`}>
                     <td className="px-6 py-4 font-medium flex items-center gap-3">
                         <img src={user.avatarUrl} alt={user.name} className="w-8 h-8 rounded-full" />
                         <div>
-                            <p>{user.name}</p>
+                            <p>{user.name} {user.isAdmin ? '(Admin)' : ''}</p>
                             <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">{user.email}</p>
                         </div>
                     </td>
                     <td className="px-6 py-4">
-                      {user.isAdmin ? 
-                        <span className="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 dark:text-green-300 dark:bg-green-900 rounded-full">Admin</span> : 
-                        <span className="px-2 py-1 text-xs font-medium text-blue-800 bg-blue-100 dark:text-blue-300 dark:bg-blue-900 rounded-full">User</span>
+                      {isDeactivated ? 
+                        <span className="px-2 py-1 text-xs font-medium text-red-800 bg-red-100 dark:text-red-300 dark:bg-red-900 rounded-full">Deactivated</span> : 
+                        <span className="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 dark:text-green-300 dark:bg-green-900 rounded-full">Active</span>
                       }
                     </td>
                     <td className="px-6 py-4">
-                      <button onClick={() => handleDeleteUser(user.id)} disabled={user.id === currentUser?.id || isProcessing} className="font-medium text-red-600 dark:text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">
-                        {isProcessing ? 'Deleting...' : 'Delete'}
+                      <button onClick={() => handleUpdateUserStatus(user.id, !isDeactivated)} disabled={user.id === currentUser?.id || isProcessing} className={`font-medium hover:underline disabled:opacity-50 disabled:cursor-not-allowed ${isDeactivated ? 'text-green-600 dark:text-green-500' : 'text-yellow-600 dark:text-yellow-500'}`}>
+                        {isProcessing ? 'Updating...' : isDeactivated ? 'Activate' : 'Deactivate'}
                       </button>
                     </td>
                   </tr>
