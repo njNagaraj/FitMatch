@@ -6,6 +6,7 @@ import { useAuth } from '../../../auth/contexts/AuthContext';
 import { useActivities } from '../../activities/contexts/ActivityContext';
 import { Sport } from '../../../shared/types';
 import { haversineDistance } from '../../../shared/utils/geolocation';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 
 interface DashboardProps {
   setCurrentPage: (page: React.SetStateAction<any>) => void;
@@ -13,7 +14,7 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage }) => {
   const { currentUser } = useAuth();
-  const { nearbyActivities, sports, myActivities, getSportById, locationPreference } = useActivities();
+  const { nearbyActivities, sports, myActivities, getSportById, locationPreference, loading } = useActivities();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [sportFilter, setSportFilter] = useState('All Sports');
@@ -40,6 +41,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage }) => {
 
   if (!currentUser) {
     return <div>Loading...</div>;
+  }
+
+  if (loading) {
+    return <LoadingSpinner message="Finding activities near you..." />;
   }
   
   const greeting = `Good ${new Date().getHours() < 12 ? 'morning' : 'afternoon'}, ${currentUser.name.split(' ')[0]}!`;

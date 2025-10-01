@@ -48,6 +48,14 @@ create table profiles (
 -- Set up Row Level Security (RLS)
 alter table profiles enable row level security;
 
+-- Drop old policies if they exist for idempotency
+drop policy if exists "Public profiles are viewable by everyone." on profiles;
+drop policy if exists "Users can insert their own profile." on profiles;
+drop policy if exists "Users can update their own profile." on profiles;
+drop policy if exists "Admins can update any profile." on profiles;
+
+
+-- Create new, more secure policies
 create policy "Public profiles are viewable by everyone." on profiles
   for select using (true);
 
@@ -55,13 +63,23 @@ create policy "Users can insert their own profile." on profiles
   for insert with check (auth.uid() = id);
 
 create policy "Users can update their own profile." on profiles
-  for update using (auth.uid() = id);
+  for update using (auth.uid() = id)
+  with check (
+    -- Users can only update their own profile
+    id = auth.uid() AND
+    -- Users cannot change their admin status
+    is_admin = (SELECT p.is_admin FROM profiles p WHERE p.id = auth.uid()) AND
+    -- Users cannot change their deactivation status
+    is_deactivated = (SELECT p.is_deactivated FROM profiles p WHERE p.id = auth.uid())
+  );
 
 create policy "Admins can update any profile." on profiles
-  for update using ((select is_admin from profiles where id = auth.uid()) = true);
+  for update using (
+    (select is_admin from profiles where id = auth.uid()) = true
+  );
 
 -- This trigger automatically creates a profile entry when a new user signs up
-create function public.handle_new_user()
+create or replace function public.handle_new_user()
 returns trigger as $$
 begin
   insert into public.profiles (id, name, avatar_url)
@@ -70,6 +88,7 @@ begin
 end;
 $$ language plpgsql security definer;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
@@ -213,13 +232,37 @@ create policy "Admins can manage messages." on messages
     for all using ((select is_admin from profiles where id = auth.uid()) = true);
 ```
 
-### Step 4: Enable Realtime for Chats
+### Step 4: Add Database Indexes for Performance
+
+To ensure the application remains fast as data grows, run the following SQL commands in the **SQL Editor**. These indexes will significantly speed up common queries like filtering activities, loading chats, and finding a user's joined activities.
+
+```sql
+-- To speed up fetching a user's created activities
+CREATE INDEX IF NOT EXISTS idx_activities_creator_id ON public.activities (creator_id);
+
+-- To speed up filtering activities by sport
+CREATE INDEX IF NOT EXISTS idx_activities_sport_id ON public.activities (sport_id);
+
+-- To speed up sorting activities by date
+CREATE INDEX IF NOT EXISTS idx_activities_date_time ON public.activities (date_time);
+
+-- To speed up finding all activities a user has joined
+CREATE INDEX IF NOT EXISTS idx_activity_participants_user_id ON public.activity_participants (user_id);
+
+-- To speed up fetching and sorting messages for a specific chat
+CREATE INDEX IF NOT EXISTS idx_messages_activity_id_created_at ON public.messages (activity_id, created_at);
+
+-- To speed up filtering events by city
+CREATE INDEX IF NOT EXISTS idx_events_city ON public.events (city);
+```
+
+### Step 5: Enable Realtime for Chats
 
 1.  In your Supabase dashboard, go to **Database** (the database icon).
 2.  In the sidebar, click on **Replication**.
 3.  Click on the text that says `0 tables` under "Source". Find `messages` in the list, and toggle the switch to enable it. This allows the application to listen for new messages in real-time.
 
-### Step 5: Seed Initial Data (Optional)
+### Step 6: Seed Initial Data (Optional)
 
 Run the following SQL in the **SQL Editor** to populate your database with sports and events.
 
@@ -244,7 +287,7 @@ insert into events (title, sport, city, date, description, image_url, registrati
 ('Chennai Soccer League Finals', 'Football', 'Chennai', '2025-09-28 18:00:00+00', 'Watch the thrilling conclusion to the Chennai Soccer League season.', 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?q=80&w=1923&auto=format&fit=crop', 'https://example.com/chennaisoccer');
 ```
 
-### Step 6: Automate Chat Creation with a Database Trigger
+### Step 7: Automate Chat Creation with a Database Trigger
 
 This final step creates a trigger that automatically posts a "User has joined" or "User has left" message to a chat, ensuring chats are created and updated reliably.
 
@@ -301,7 +344,7 @@ create trigger on_participation_change
   for each row execute procedure public.handle_activity_participation_change();
 ```
 
-### Step 7: Implementing User Deactivation
+### Step 8: Implementing User Deactivation
 
 To replace the permanent "delete user" functionality with a safer "deactivate user" feature, follow these steps.
 
@@ -311,10 +354,10 @@ Run this SQL in the **SQL Editor** to add a new column that will track if a user
 ```sql
 -- Add a column to track deactivation status
 alter table public.profiles
-add column is_deactivated boolean default false not null;
+add column if not exists is_deactivated boolean default false not null;
 
 -- Optional: Add an index for faster lookups
-create index idx_profiles_is_deactivated on public.profiles(is_deactivated);
+create index if not exists idx_profiles_is_deactivated on public.profiles(is_deactivated);
 ```
 
 **2. Create a Function to Check User Status**

@@ -52,15 +52,25 @@ export const EventForm: React.FC<EventFormProps> = ({ isOpen, onClose, onSave, e
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
+    
+    const isValidUrl = (urlString: string) => {
+        try {
+            const url = new URL(urlString);
+            return url.protocol === 'http:' || url.protocol === 'https:';
+        } catch (_) {
+            return false;
+        }
+    };
+
     if (!title.trim()) newErrors.title = 'Title is required.';
     if (!sport.trim()) newErrors.sport = 'Sport is required.';
     if (!city.trim()) newErrors.city = 'City is required.';
     if (!date) newErrors.date = 'Date is required.';
     if (!description.trim()) newErrors.description = 'Description is required.';
     if (!imageUrl.trim()) newErrors.imageUrl = 'Image URL is required.';
-    else if (!/^https?:\/\/.+/.test(imageUrl)) newErrors.imageUrl = 'Please enter a valid URL.';
+    else if (!isValidUrl(imageUrl)) newErrors.imageUrl = 'Please enter a valid and secure (http/https) URL.';
     if (!registrationUrl.trim()) newErrors.registrationUrl = 'Registration URL is required.';
-    else if (!/^https?:\/\/.+/.test(registrationUrl)) newErrors.registrationUrl = 'Please enter a valid URL.';
+    else if (!isValidUrl(registrationUrl)) newErrors.registrationUrl = 'Please enter a valid and secure (http/https) URL.';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

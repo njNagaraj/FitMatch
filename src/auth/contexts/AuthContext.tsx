@@ -92,15 +92,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (currentUser) {
       if (navigator.geolocation) {
+        const handleGeolocationError = (error: GeolocationPositionError) => {
+            console.error(`Geolocation error (${error.code}): ${error.message}`);
+            let toastMessage = "Could not get your location.";
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    toastMessage = "Location access denied. Please enable it in your browser settings.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    toastMessage = "Location information is unavailable at the moment.";
+                    break;
+                case error.TIMEOUT:
+                    toastMessage = "Failed to get location: request timed out.";
+                    break;
+            }
+            addToast(toastMessage, "error");
+        };
+
         navigator.geolocation.getCurrentPosition(
           position => {
             const { latitude, longitude } = position.coords;
             updateCurrentUserLocation({ lat: latitude, lon: longitude });
           },
-          error => {
-            console.error("Geolocation error:", error);
-            addToast("Could not get fresh location. Using last known.", "info");
-          },
+          handleGeolocationError,
           { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
       } else {

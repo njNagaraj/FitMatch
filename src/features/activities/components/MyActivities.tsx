@@ -4,6 +4,7 @@ import { useAuth } from '../../../auth/contexts/AuthContext';
 import { useActivities } from '../contexts/ActivityContext';
 import { Activity } from '../../../shared/types';
 import { haversineDistance } from '../../../shared/utils/geolocation';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 
 interface MyActivitiesProps {
   onEditActivity: (activity: Activity) => void;
@@ -11,8 +12,12 @@ interface MyActivitiesProps {
 
 export const MyActivities: React.FC<MyActivitiesProps> = ({ onEditActivity }) => {
   const { currentUser } = useAuth();
-  const { myActivities, locationPreference } = useActivities();
+  const { myActivities, locationPreference, loading } = useActivities();
   
+  if (loading) {
+    return <LoadingSpinner message="Loading your activities..." />;
+  }
+
   if (!currentUser) return null;
 
   const createdActivities = myActivities.filter(a => a.creatorId === currentUser.id);

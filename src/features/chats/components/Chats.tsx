@@ -4,10 +4,11 @@ import { useChats } from '../contexts/ChatContext';
 import { useActivities } from '../../activities/contexts/ActivityContext';
 import { useUsers } from '../../users/contexts/UserContext';
 import { useAuth } from '../../../auth/contexts/AuthContext';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 
 
 export const Chats: React.FC = () => {
-  const { chats } = useChats();
+  const { chats, loading } = useChats();
   const { getActivityById } = useActivities();
   const { getUserById } = useUsers();
   const { currentUser } = useAuth();
@@ -28,7 +29,9 @@ export const Chats: React.FC = () => {
                 <h1 className="text-xl font-bold">Chats</h1>
             </div>
             <div>
-            {userChats.length > 0 ? userChats.map(chat => {
+            {loading ? (
+                <LoadingSpinner message="Loading chats..." />
+            ) : userChats.length > 0 ? userChats.map(chat => {
                 const activity = getActivityById(chat.activityId);
                 if (!activity) return null;
                 

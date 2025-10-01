@@ -7,15 +7,18 @@ import { useEvents } from '../../events/contexts/EventContext';
 import { useAuth } from '../../../auth/contexts/AuthContext';
 import { useToast } from '../../../shared/contexts/ToastContext';
 import { useModal } from '../../../shared/contexts/ModalContext';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 
 export const AdminDashboard: React.FC = () => {
-  const { users, setUserDeactivationStatus, getUserById } = useUsers();
-  const { activities, deleteActivity } = useActivities();
-  const { events } = useEvents();
+  const { users, setUserDeactivationStatus, getUserById, loading: usersLoading } = useUsers();
+  const { activities, deleteActivity, loading: activitiesLoading } = useActivities();
+  const { events, loading: eventsLoading } = useEvents();
   const { currentUser } = useAuth();
   const { addToast } = useToast();
   const { showConfirm } = useModal();
   const [processingId, setProcessingId] = useState<string | null>(null);
+
+  const isLoading = usersLoading || activitiesLoading || eventsLoading;
 
   const handleUpdateUserStatus = (userId: string, isDeactivated: boolean) => {
     if(userId === currentUser?.id) {
@@ -58,6 +61,10 @@ export const AdminDashboard: React.FC = () => {
       },
     });
   };
+
+  if (isLoading) {
+    return <LoadingSpinner message="Loading admin data..." />;
+  }
 
   return (
     <div className="p-4 sm:p-8 space-y-8 overflow-y-auto h-full">

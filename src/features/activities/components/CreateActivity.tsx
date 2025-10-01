@@ -5,6 +5,7 @@ import { FormRow } from '../../../shared/components/FormRow';
 import { useAuth } from '../../../auth/contexts/AuthContext';
 import { useActivities } from '../contexts/ActivityContext';
 import { ICONS } from '../../../shared/constants';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 
 interface CreateActivityProps {
   setCurrentPage: (page: Page) => void;
@@ -14,7 +15,7 @@ interface CreateActivityProps {
 
 export const CreateActivity: React.FC<CreateActivityProps> = ({ setCurrentPage, activityToEdit, setActivityToEdit }) => {
   const { currentUser } = useAuth();
-  const { sports, createActivity, updateActivity } = useActivities();
+  const { sports, createActivity, updateActivity, loading } = useActivities();
   
   const isEditing = !!activityToEdit;
   
@@ -186,6 +187,10 @@ export const CreateActivity: React.FC<CreateActivityProps> = ({ setCurrentPage, 
   
   if (!currentUser) {
     return <div>Loading...</div>
+  }
+
+  if (loading) {
+    return <LoadingSpinner message="Loading form data..." />;
   }
 
   return (

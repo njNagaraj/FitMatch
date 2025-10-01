@@ -6,9 +6,10 @@ import { EventCard } from './EventCard';
 import { useEvents } from '../contexts/EventContext';
 import { useAuth } from '../../../auth/contexts/AuthContext';
 import { useModal } from '../../../shared/contexts/ModalContext';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 
 export const Events: React.FC = () => {
-  const { events, createEvent, updateEvent, deleteEvent } = useEvents();
+  const { events, createEvent, updateEvent, deleteEvent, loading } = useEvents();
   const { isAdmin } = useAuth();
   const [cityFilter, setCityFilter] = useState('All Cities');
   
@@ -72,7 +73,9 @@ export const Events: React.FC = () => {
         </div>
         
         <div data-tour-id="events-list">
-            {filteredEvents.length > 0 ? (
+            {loading ? (
+                <LoadingSpinner message="Loading upcoming events..." />
+            ) : filteredEvents.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredEvents.map(event => (
                 <EventCard 
