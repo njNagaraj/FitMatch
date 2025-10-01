@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useModal } from '../contexts/ModalContext';
 
 // Declare Leaflet in the global scope to avoid TypeScript errors
 declare const L: any;
@@ -24,6 +25,7 @@ export const MapPicker: React.FC<MapPickerProps> = ({ isOpen, onClose, onLocatio
   const [selectedLocation, setSelectedLocation] = useState(initialCenter);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const { showAlert } = useModal();
 
   // Effect to initialize the map instance once when the modal opens
   useEffect(() => {
@@ -75,11 +77,11 @@ export const MapPicker: React.FC<MapPickerProps> = ({ isOpen, onClose, onLocatio
             const { lat, lon } = data[0];
             setSelectedLocation({ lat: parseFloat(lat), lon: parseFloat(lon) });
         } else {
-            alert('Location not found.');
+            showAlert({ title: 'Search Failed', message: 'Location not found. Please try a different search term.' });
         }
     } catch (error) {
         console.error('Search failed:', error);
-        alert('Failed to search for location.');
+        showAlert({ title: 'Error', message: 'An error occurred while searching for the location. Please check your connection and try again.' });
     } finally {
         setIsSearching(false);
     }

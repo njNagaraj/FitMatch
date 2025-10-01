@@ -3,6 +3,7 @@ import { Activity } from '../../../shared/types';
 import { useActivities } from '../contexts/ActivityContext';
 import { useUsers } from '../../users/contexts/UserContext';
 import { ICONS } from '../../../shared/constants';
+import { useModal } from '../../../shared/contexts/ModalContext';
 
 interface MyActivityCardProps {
   activity: Activity;
@@ -14,33 +15,46 @@ interface MyActivityCardProps {
 export const MyActivityCard: React.FC<MyActivityCardProps> = ({ activity, isCreator, onEdit, distance }) => {
   const { getSportById, leaveActivity, deleteActivity } = useActivities();
   const { getUserById } = useUsers();
+  const { showConfirm } = useModal();
   const [isLoading, setIsLoading] = useState(false);
 
   const sport = getSportById(activity.sportId);
   const sportName = activity.otherSportName || sport?.name;
 
-  const handleLeave = async () => {
+  const handleLeave = () => {
     if (isLoading) return;
-    if (window.confirm('Are you sure you want to leave this activity?')) {
-      setIsLoading(true);
-      try {
-        await leaveActivity(activity.id);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+    showConfirm({
+      title: 'Leave Activity',
+      message: 'Are you sure you want to leave this activity?',
+      confirmText: 'Leave',
+      confirmButtonClass: 'bg-yellow-600 hover:bg-yellow-700',
+      onConfirm: async () => {
+        setIsLoading(true);
+        try {
+          await leaveActivity(activity.id);
+        } finally {
+          setIsLoading(false);
+        }
+      },
+    });
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (isLoading) return;
-    if (window.confirm('Are you sure you want to permanently delete this activity? This cannot be undone.')) {
-      setIsLoading(true);
-      try {
-        await deleteActivity(activity.id);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+    showConfirm({
+      title: 'Delete Activity',
+      message: 'Are you sure you want to permanently delete this activity? This cannot be undone.',
+      confirmText: 'Delete',
+      confirmButtonClass: 'bg-red-600 hover:bg-red-700',
+      onConfirm: async () => {
+        setIsLoading(true);
+        try {
+          await deleteActivity(activity.id);
+        } finally {
+          setIsLoading(false);
+        }
+      },
+    });
   };
 
   return (

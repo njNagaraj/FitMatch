@@ -14,25 +14,28 @@ import { ChatProvider } from './features/chats/contexts/ChatContext';
 import { UserProvider } from './features/users/contexts/UserContext';
 import { ToastProvider, useToast } from './shared/contexts/ToastContext';
 import { TourProvider, useTour } from './features/onboarding/contexts/TourContext';
+import { ModalProvider } from './shared/contexts/ModalContext';
 import { ICONS } from './shared/constants';
 
 // The main App component is now the provider wrapper
 const App = () => {
     return (
       <ToastProvider>
-        <AuthProvider>
-          <UserProvider>
-            <ChatProvider>
-              <ActivityProvider>
-                <EventProvider>
-                  <TourProvider>
-                    <AppContent />
-                  </TourProvider>
-                </EventProvider>
-              </ActivityProvider>
-            </ChatProvider>
-          </UserProvider>
-        </AuthProvider>
+        <ModalProvider>
+            <AuthProvider>
+            <UserProvider>
+                <ChatProvider>
+                <ActivityProvider>
+                    <EventProvider>
+                    <TourProvider>
+                        <AppContent />
+                    </TourProvider>
+                    </EventProvider>
+                </ActivityProvider>
+                </ChatProvider>
+            </UserProvider>
+            </AuthProvider>
+        </ModalProvider>
       </ToastProvider>
     );
 };

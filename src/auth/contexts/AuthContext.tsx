@@ -60,6 +60,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Listen for auth state changes (login, logout, refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Security fix: Clean up the URL if it contains tokens from email confirmation/password reset.
+      // This prevents tokens from being exposed in the browser's address bar.
+      if ((_event === 'SIGNED_IN' || _event === 'USER_UPDATED') && window.location.hash.includes('access_token')) {
+        window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+      }
 
       if (session?.user) {
         // Immediately set minimal user

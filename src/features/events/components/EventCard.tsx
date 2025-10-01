@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Event } from '../../../shared/types';
+import { useModal } from '../../../shared/contexts/ModalContext';
 
 interface EventCardProps {
   event: Event;
@@ -10,15 +11,24 @@ interface EventCardProps {
 
 export const EventCard: React.FC<EventCardProps> = ({ event, isAdmin, onEdit, onDelete }) => {
     const [isDeleting, setIsDeleting] = useState(false);
+    const { showConfirm } = useModal();
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
         if (isDeleting) return;
-        setIsDeleting(true);
-        try {
-            await onDelete(event.id);
-        } finally {
-            // No need to set isDeleting to false if the component unmounts
-        }
+        showConfirm({
+            title: 'Delete Event',
+            message: `Are you sure you want to delete "${event.title}"? This cannot be undone.`,
+            confirmText: 'Delete',
+            confirmButtonClass: 'bg-red-600 hover:bg-red-700',
+            onConfirm: async () => {
+                setIsDeleting(true);
+                try {
+                    await onDelete(event.id);
+                } finally {
+                    // No need to set isDeleting to false if the component unmounts on success
+                }
+            },
+        });
     }
 
     return (

@@ -6,6 +6,7 @@ import { useActivities } from '../../activities/contexts/ActivityContext';
 import { useEvents } from '../../events/contexts/EventContext';
 import { useAuth } from '../../../auth/contexts/AuthContext';
 import { useToast } from '../../../shared/contexts/ToastContext';
+import { useModal } from '../../../shared/contexts/ModalContext';
 
 export const AdminDashboard: React.FC = () => {
   const { users, setUserDeactivationStatus, getUserById } = useUsers();
@@ -13,33 +14,49 @@ export const AdminDashboard: React.FC = () => {
   const { events } = useEvents();
   const { currentUser } = useAuth();
   const { addToast } = useToast();
+  const { showConfirm } = useModal();
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  const handleUpdateUserStatus = async (userId: string, isDeactivated: boolean) => {
+  const handleUpdateUserStatus = (userId: string, isDeactivated: boolean) => {
     if(userId === currentUser?.id) {
         addToast("You cannot change the status of your own account.", 'error');
         return;
     }
     const action = isDeactivated ? 'deactivate' : 'activate';
-    if (window.confirm(`Are you sure you want to ${action} this user account?`)) {
-      setProcessingId(userId);
-      try {
-        await setUserDeactivationStatus(userId, isDeactivated);
-      } finally {
-        setProcessingId(null);
-      }
-    }
+    const user = getUserById(userId);
+    if (!user) return;
+    
+    showConfirm({
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} User`,
+      message: `Are you sure you want to ${action} the account for "${user.name}"?`,
+      confirmText: action.charAt(0).toUpperCase() + action.slice(1),
+      confirmButtonClass: isDeactivated ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700',
+      onConfirm: async () => {
+        setProcessingId(userId);
+        try {
+          await setUserDeactivationStatus(userId, isDeactivated);
+        } finally {
+          setProcessingId(null);
+        }
+      },
+    });
   };
 
-  const handleDeleteActivity = async (activityId: string) => {
-    if (window.confirm('Are you sure you want to permanently delete this activity?')) {
-      setProcessingId(activityId);
-      try {
-        await deleteActivity(activityId);
-      } finally {
-        setProcessingId(null);
-      }
-    }
+  const handleDeleteActivity = (activityId: string) => {
+    showConfirm({
+      title: 'Delete Activity',
+      message: 'Are you sure you want to permanently delete this activity?',
+      confirmText: 'Delete',
+      confirmButtonClass: 'bg-red-600 hover:bg-red-700',
+      onConfirm: async () => {
+        setProcessingId(activityId);
+        try {
+          await deleteActivity(activityId);
+        } finally {
+          setProcessingId(null);
+        }
+      },
+    });
   };
 
   return (

@@ -5,6 +5,7 @@ import { ICONS } from '../../../shared/constants';
 import { EventCard } from './EventCard';
 import { useEvents } from '../contexts/EventContext';
 import { useAuth } from '../../../auth/contexts/AuthContext';
+import { useModal } from '../../../shared/contexts/ModalContext';
 
 export const Events: React.FC = () => {
   const { events, createEvent, updateEvent, deleteEvent } = useEvents();
@@ -32,9 +33,7 @@ export const Events: React.FC = () => {
   };
 
   const handleDelete = async (eventId: string) => {
-    if (window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
-      await deleteEvent(eventId);
-    }
+    await deleteEvent(eventId);
   };
 
   const handleSave = async (eventData: Omit<Event, 'id'>) => {
