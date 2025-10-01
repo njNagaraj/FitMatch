@@ -57,6 +57,9 @@ create policy "Users can insert their own profile." on profiles
 create policy "Users can update their own profile." on profiles
   for update using (auth.uid() = id);
 
+create policy "Admins can update any profile." on profiles
+  for update using ((select is_admin from profiles where id = auth.uid()) = true);
+
 -- This trigger automatically creates a profile entry when a new user signs up
 create function public.handle_new_user()
 returns trigger as $$
@@ -248,29 +251,37 @@ This final step creates a trigger that automatically posts a "User has joined" o
 **1. Create the Trigger Function**
 This function contains the logic to post a message. Copy this into the Supabase **SQL Editor** and click **RUN**.
 ```sql
--- This updated function removes the 'set role' command, which was causing the error.
--- The 'security definer' property is sufficient to bypass RLS for inserting system messages.
+-- This function inserts a system message when a user joins or leaves an activity.
+-- It runs as a 'security definer' to bypass RLS for inserting system messages.
+-- It now checks if an activity still exists before posting a "left" message.
+-- This prevents an error when an entire activity is deleted, which also cascades
+-- to delete participants.
 create or replace function public.handle_activity_participation_change()
 returns trigger as $$
 declare
   user_profile record;
+  activity_exists boolean;
 begin
-  -- This security definer function runs with the permissions of its owner,
-  -- bypassing the RLS policies of the calling user. This allows us to insert
-  -- a system message which the user's own RLS policy would normally prevent.
-
   if (tg_op = 'INSERT') then
     -- Get the profile of the user who joined
     select name into user_profile from public.profiles where id = new.user_id;
     -- Post a "joined" message
     insert into public.messages (activity_id, sender_id, text, is_system_message)
     values (new.activity_id, new.user_id, user_profile.name || ' has joined the activity!', true);
+    
   elsif (tg_op = 'DELETE') then
-    -- Get the profile of the user who left
-    select name into user_profile from public.profiles where id = old.user_id;
-    -- Post a "left" message
-    insert into public.messages (activity_id, sender_id, text, is_system_message)
-    values (old.activity_id, new.user_id, user_profile.name || ' has left the activity.', true);
+    -- Check if the activity still exists. This prevents the trigger from running
+    -- when an activity is deleted (and its participants are removed via cascade).
+    select exists(select 1 from public.activities where id = old.activity_id) into activity_exists;
+    
+    if activity_exists then
+      -- Get the profile of the user who left
+      select name into user_profile from public.profiles where id = old.user_id;
+      -- Post a "left" message
+      insert into public.messages (activity_id, sender_id, text, is_system_message)
+      values (old.activity_id, old.user_id, user_profile.name || ' has left the activity.', true);
+    end if;
+    
   end if;
 
   return null; -- The return value is ignored for AFTER triggers.
